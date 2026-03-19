@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router";
 import {
   ArrowLeft,
@@ -103,6 +104,29 @@ const peerComparison = [
 export default function CreditRiskAnalysis() {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [newsList, setNewsList] = useState<any[]>(newsData);
+
+  const companyRegistry: Record<string, string> = {
+    "APP-2024-001": "TechVista Solutions Pvt Ltd",
+    "APP-2024-002": "Global Exports & Trading Co",
+    "APP-2024-003": "Urban Construction Ltd",
+    "APP-2024-004": "Fresh Farms Agriculture",
+    "APP-2024-005": "Retail Chain Ventures",
+    "APP-2024-006": "Innovative Software Labs"
+  };
+  
+  const companyName = companyRegistry[id || "APP-2024-001"] || "TechVista Solutions Pvt Ltd";
+
+  useEffect(() => {
+    fetch(`http://localhost:8000/api/news?company=${encodeURIComponent(companyName)}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.news) {
+            setNewsList(data.news);
+        }
+      })
+      .catch(err => console.error("Failed to fetch news:", err));
+  }, []);
 
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
@@ -335,7 +359,7 @@ export default function CreditRiskAnalysis() {
               <h3 className="text-lg text-[#1a1a1a] dark:text-white">Recent News & Market Intelligence</h3>
             </div>
             <div className="space-y-4">
-              {newsData.map((news) => (
+              {newsList.map((news) => (
                 <div
                   key={news.id}
                   className="p-4 border border-[#e5e5e5] dark:border-[#334155] rounded-xl hover:shadow-md transition-all group cursor-pointer"
@@ -355,10 +379,10 @@ export default function CreditRiskAnalysis() {
                       {news.sentiment}
                     </span>
                   </div>
-                  <p className="text-xs text-[#737373] dark:text-[#94a3b8] leading-relaxed">{news.summary}</p>
-                  <button className="mt-2 text-xs text-[#00b386] flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <p className="text-xs text-[#737373] dark:text-[#94a3b8] leading-relaxed line-clamp-3">{news.summary}</p>
+                  <a href={news.url || "#"} target="_blank" rel="noopener noreferrer" className="inline-flex mt-2 text-xs text-[#00b386] items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     Read more <ExternalLink className="w-3 h-3" />
-                  </button>
+                  </a>
                 </div>
               ))}
             </div>
