@@ -101,16 +101,11 @@ export default function ReportPreview() {
     setInputMessage("");
     
     try {
-      const response = await fetch("http://localhost:8000/api/chat", {
+      const response = await fetch(`http://localhost:8000/api/chat/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: userMsg,
-          context: {
-             company: companyName,
-             score: riskScore,
-             summary: aiExplanation
-          }
+          message: userMsg
         })
       });
       const data = await response.json();
@@ -386,7 +381,7 @@ export default function ReportPreview() {
                 {messages.map((msg, idx) => (
                   <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`max-w-[80%] p-3 rounded-xl text-sm ${
+                      className={`max-w-[80%] p-3 rounded-xl text-sm whitespace-pre-wrap ${
                         msg.role === "user"
                           ? "bg-gradient-to-r from-[#00b386] to-[#059669] text-white"
                           : "bg-[#f5f5f5] dark:bg-[#334155] text-[#1a1a1a] dark:text-white"

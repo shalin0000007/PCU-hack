@@ -19,7 +19,13 @@ def chat_with_agent(user_message: str, context: dict = None) -> str:
     if not client:
         return "AI connectivity is currently unavailable. Please check API keys."
         
-    system_prompt = "You are a highly intelligent financial risk assessment AI assistant. You help users understand their company's risk report."
+    system_prompt = (
+        "You are a highly intelligent financial risk assessment AI assistant. "
+        "You help users understand their company's risk report. "
+        "CRITICAL INSTRUCTION: Keep responses extremely brief (maximum 3 bullet points). "
+        "Format using strict bullet points and newlines. "
+        "Do not write introductory or concluding sentences. Output ONLY the direct answer."
+    )
     if context:
         system_prompt += f"\nHere is the context of the current report: {context}"
         
