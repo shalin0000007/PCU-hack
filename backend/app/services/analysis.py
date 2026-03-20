@@ -27,9 +27,9 @@ def parse_financial_files(gst_bytes: bytes, bank_bytes: bytes):
         "gst_vs_bank": [],
         "cash_flow": [],
         "industry_insights": [
-            {"category": "Profitability", "company": 75, "industry": 82},
-            {"category": "Liquidity", "company": 65, "industry": 60},
-            {"category": "Growth", "company": 85, "industry": 70}
+            {"category": "Profit Margin", "company": 12, "industry": 15},
+            {"category": "Debt Ratio", "company": 68, "industry": 52},
+            {"category": "Liquidity", "company": 1.5, "industry": 1.8}
         ]
     }
     
@@ -38,52 +38,76 @@ def parse_financial_files(gst_bytes: bytes, bank_bytes: bytes):
         try:
             df_gst = pd.read_csv(io.BytesIO(gst_bytes))
             for _, row in df_gst.iterrows():
-                month_raw = str(row.get('Month', ''))
-                month_short = month_raw.split('-')[0][:3] if '-' in month_raw else month_raw[:3]
-                gst_val = float(row.get('GST_Filing_Amount', 0))
-                gst_map[month_short] = gst_val
+                month_str = str(row.get('Month', '')).strip()
+                rev = row.get('Revenue', 0)
+                if pd.isna(rev): rev = 0
+                gst_map[month_str] = float(rev)
         except Exception as e:
             print("GST Parse Error:", e)
 
     bank_map = {}
-    inflows = 0.0
-    outflows = 0.0
+    quarterly_cash_flow = {}
+    
     if bank_bytes:
         try:
             df_bank = pd.read_csv(io.BytesIO(bank_bytes))
             for _, row in df_bank.iterrows():
-                dep = pd.to_numeric(row.get('Deposit', 0), errors='coerce')
-                withd = pd.to_numeric(row.get('Withdrawal', 0), errors='coerce')
-                dep = dep if pd.notna(dep) else 0
-                withd = withd if pd.notna(withd) else 0
+                month_str = str(row.get('Month', '')).strip()
+                credits = pd.to_numeric(row.get('Credits', 0), errors='coerce')
+                debits = pd.to_numeric(row.get('Debits', 0), errors='coerce')
+                c = float(credits if pd.notna(credits) else 0)
+                d = float(debits if pd.notna(debits) else 0)
                 
-                inflows += dep
-                outflows += withd
+                bank_map[month_str] = {"credits": c, "debits": d}
                 
-                date_str = str(row.get('Date', ''))
-                if len(date_str) >= 7: 
-                    month_num = int(date_str[5:7])
-                    months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-                    m_short = months[month_num - 1] if 1 <= month_num <= 12 else "Unk"
-                    bank_map[m_short] = bank_map.get(m_short, 0) + dep
+                if " " in month_str:
+                    parts = month_str.split(" ", 1)
+                    if len(parts) == 2:
+                        m, y = parts
+                        q = 1 if m in ["Jan", "Feb", "Mar"] else (2 if m in ["Apr", "May", "Jun"] else (3 if m in ["Jul", "Aug", "Sep"] else 4))
+                        q_str = f"Q{q} {y}"
+                        
+                        if q_str not in quarterly_cash_flow:
+                            quarterly_cash_flow[q_str] = {"inflow": 0, "outflow": 0}
+                        quarterly_cash_flow[q_str]["inflow"] += c
+                        quarterly_cash_flow[q_str]["outflow"] += d
+                    
         except Exception as e:
             print("Bank Parse Error:", e)
 
-    all_months = list(set(list(gst_map.keys()) + list(bank_map.keys())))
-    month_order = {m: i for i, m in enumerate(["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"])}
-    all_months.sort(key=lambda m: month_order.get(m, 99))
+    months_order = {"Jan": 1, "Feb": 2, "Mar": 3, "Apr": 4, "May": 5, "Jun": 6, "Jul": 7, "Aug": 8, "Sep": 9, "Oct": 10, "Nov": 11, "Dec": 12}
     
-    for m in all_months:
+    all_keys = list(set(list(gst_map.keys()) + list(bank_map.keys())))
+    def sort_key(s):
+        parts = s.split(" ")
+        m = parts[0]
+        y = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else 2000
+        return y * 100 + months_order.get(m, 0)
+        
+    all_keys.sort(key=sort_key)
+    
+    for k in all_keys:
         chart_data["gst_vs_bank"].append({
-            "month": m,
-            "gst": gst_map.get(m, 0),
-            "bank": bank_map.get(m, 0)
+            "month": k,
+            "gstRevenue": gst_map.get(k, 0),
+            "bankCredits": bank_map.get(k, {}).get("credits", 0)
         })
         
-    chart_data["cash_flow"].append({
-        "quarter": "Recent",
-        "inflow": inflows,
-        "outflow": outflows
-    })
-    
+    def q_sort_key(q_str):
+        parts = q_str.split(" ")
+        if len(parts) == 2 and parts[1].isdigit():
+            y = int(parts[1])
+            q = int(parts[0].replace("Q", ""))
+            return y * 10 + q
+        return 0
+        
+    sorted_quarters = sorted(quarterly_cash_flow.keys(), key=q_sort_key)
+    recent_quarters = sorted_quarters[-8:] if len(sorted_quarters) > 8 else sorted_quarters
+    for q in recent_quarters:
+        chart_data["cash_flow"].append({
+            "quarter": q,
+            "inflow": quarterly_cash_flow[q]["inflow"],
+            "outflow": quarterly_cash_flow[q]["outflow"]
+        })
+        
     return chart_data

@@ -1,6 +1,10 @@
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 
+class ChatRequest(BaseModel):
+    message: str
+    context: Optional[Dict[str, Any]] = None
+
 class ApplicationResponse(BaseModel):
     id: str
     company_name: str

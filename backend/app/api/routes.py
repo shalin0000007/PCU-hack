@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from typing import Optional
-from app.models.schemas import ApplicationResponse, AnalysisRequest, AnalysisReportResponse
+from app.models.schemas import ApplicationResponse, AnalysisRequest, AnalysisReportResponse, ChatRequest
 from app.services.analysis import calculate_risk_score, parse_financial_files
 from app.services.ai_service import generate_risk_summary
 from app.services.news_service import fetch_company_news
@@ -133,3 +133,9 @@ def delete_application(application_id: str):
         raise HTTPException(status_code=404, detail="Application not found")
         
     return {"message": "Application deleted successfully"}
+
+@router.post("/chat")
+def chat_endpoint(req: ChatRequest):
+    from app.services.ai_service import chat_with_agent
+    response = chat_with_agent(req.message, req.context)
+    return {"reply": response}

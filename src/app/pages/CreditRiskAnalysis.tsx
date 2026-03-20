@@ -99,6 +99,7 @@ export default function CreditRiskAnalysis() {
   const { id } = useParams();
   const [reportData, setReportData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState<string>("All Time");
 
   useEffect(() => {
     fetch(`http://localhost:8000/api/analysis/${id}`)
@@ -195,7 +196,35 @@ export default function CreditRiskAnalysis() {
   const companyName = application?.companies?.name || "Unknown Company";
   
   const newsList = report.news_data || [];
-  const gstVsBankData = report.chart_data?.gst_vs_bank || [];
+  
+  let rawGstBankData = report.chart_data?.gst_vs_bank || [];
+  const mappedGstBankData = rawGstBankData.map((d: any) => {
+    const parts = String(d.month || "").split(" ");
+    return {
+      originalMonth: d.month,
+      month: parts[0] || "Unknown",
+      year: parts[1] || "2024",
+      gst: d.gstRevenue || d.gst || 0,
+      bank: d.bankCredits || d.bank || 0,
+    };
+  });
+  
+  const availableYears = ["All Time", ...Array.from(new Set(mappedGstBankData.map((d: any) => d.year)))].sort().reverse();
+  
+  const filteredGstBankData = selectedYear === "All Time" 
+      ? mappedGstBankData.map((d: any) => ({ ...d, displayMonth: d.originalMonth }))
+      : mappedGstBankData.filter((d: any) => d.year === selectedYear).map((d: any) => ({ ...d, displayMonth: d.month }));
+
+  const totalGst = filteredGstBankData.reduce((acc: number, val: any) => acc + val.gst, 0);
+  const totalBank = filteredGstBankData.reduce((acc: number, val: any) => acc + val.bank, 0);
+  const difference = Math.abs(totalGst - totalBank);
+
+  const formatCurrency = (val: number) => {
+    if (val >= 10000000) return `₹${(val / 10000000).toFixed(2)} Cr`;
+    if (val >= 100000) return `₹${(val / 100000).toFixed(2)} L`;
+    return `₹${val.toLocaleString()}`;
+  };
+
   const cashFlowData = report.chart_data?.cash_flow || [];
   const industryInsights = report.chart_data?.industry_insights || [];
   const keyFindings = report.key_findings || [];
@@ -327,15 +356,48 @@ export default function CreditRiskAnalysis() {
           </div>
         </div>
 
+        {/* Charts Section Header */}
+        <div className="flex items-center justify-between mt-8 mb-4">
+          <h2 className="text-xl text-[#1a1a1a] dark:text-white font-medium">Financial Analysis</h2>
+          <select 
+            value={selectedYear}
+            onChange={(e) => setSelectedYear(e.target.value)}
+            className="px-4 py-2 bg-white dark:bg-[#1e293b] border border-[#e5e5e5] dark:border-[#334155] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white shadow-sm"
+          >
+            {availableYears.map(year => (
+              <option key={String(year)} value={String(year)}>{String(year)}</option>
+            ))}
+          </select>
+        </div>
+
+        {/* Financial Summary Pills */}
+        <div className="bg-white dark:bg-[#1e293b] rounded-[24px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-6">
+          <h3 className="text-lg text-[#1a1a1a] dark:text-white">Financial Summary {selectedYear !== "All Time" && `(${selectedYear})`}</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="p-6 bg-[#d1fae5] dark:bg-[#065f46]/30 rounded-[20px] text-center flex flex-col items-center justify-center border border-[#10b981]/20">
+              <p className="text-sm text-[#10b981] dark:text-[#6ee7b7] font-medium mb-1">GST Revenue</p>
+              <p className="text-3xl text-[#1a1a1a] dark:text-white font-semibold">{formatCurrency(totalGst)}</p>
+            </div>
+            <div className="p-6 bg-[#dbeafe] dark:bg-[#1e3a8a]/30 rounded-[20px] text-center flex flex-col items-center justify-center border border-[#3b82f6]/20">
+              <p className="text-sm text-[#3b82f6] dark:text-[#93c5fd] font-medium mb-1">Bank Credits</p>
+              <p className="text-3xl text-[#1a1a1a] dark:text-white font-semibold">{formatCurrency(totalBank)}</p>
+            </div>
+            <div className={`p-6 rounded-[20px] text-center flex flex-col items-center justify-center border ${totalGst > totalBank ? 'bg-[#fee2e2] dark:bg-[#7f1d1d]/30 border-[#ef4444]/20' : 'bg-[#fef3c7] dark:bg-[#78350f]/30 border-[#f59e0b]/20'}`}>
+              <p className={`text-sm font-medium mb-1 ${totalGst > totalBank ? 'text-[#ef4444] dark:text-[#fca5a5]' : 'text-[#f59e0b] dark:text-[#fcd34d]'}`}>Difference</p>
+              <p className="text-3xl text-[#1a1a1a] dark:text-white font-semibold">{formatCurrency(difference)}</p>
+            </div>
+          </div>
+        </div>
+
         {/* Charts Row */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* GST vs Bank Revenue */}
           <div className="bg-white dark:bg-[#1e293b] rounded-[24px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-6">
             <h3 className="text-lg text-[#1a1a1a] dark:text-white">GST vs Bank Revenue Trend</h3>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={gstVsBankData}>
+              <LineChart data={filteredGstBankData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" className="dark:stroke-[#334155]" />
-                <XAxis dataKey="month" stroke="#737373" className="dark:stroke-[#94a3b8]" />
+                <XAxis dataKey="displayMonth" stroke="#737373" className="dark:stroke-[#94a3b8]" />
                 <YAxis stroke="#737373" className="dark:stroke-[#94a3b8]" />
                 <Tooltip
                   contentStyle={{
@@ -378,16 +440,13 @@ export default function CreditRiskAnalysis() {
         <div className="bg-white dark:bg-[#1e293b] rounded-[24px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-6">
           <div className="flex items-center gap-3">
             <Target className="w-6 h-6 text-[#00b386]" />
-            <h3 className="text-lg text-[#1a1a1a] dark:text-white">Industry Performance Comparison</h3>
+            <h3 className="text-lg text-[#1a1a1a] dark:text-white">Peer Comparison</h3>
           </div>
-          <ResponsiveContainer width="100%" height={350}>
-            <RadarChart data={industryInsights}>
-              <PolarGrid stroke="#e5e5e5" className="dark:stroke-[#334155]" />
-              <PolarAngleAxis dataKey="category" stroke="#737373" className="dark:stroke-[#94a3b8]" />
-              <PolarRadiusAxis stroke="#737373" className="dark:stroke-[#94a3b8]" />
-              <Radar name="Company" dataKey="company" stroke="#00b386" fill="#00b386" fillOpacity={0.6} />
-              <Radar name="Industry Avg" dataKey="industry" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.3} />
-              <Legend />
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={industryInsights}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" className="dark:stroke-[#334155]" />
+              <XAxis dataKey="category" stroke="#737373" className="dark:stroke-[#94a3b8]" />
+              <YAxis stroke="#737373" className="dark:stroke-[#94a3b8]" />
               <Tooltip
                 contentStyle={{
                   backgroundColor: "#1e293b",
@@ -395,7 +454,10 @@ export default function CreditRiskAnalysis() {
                   borderRadius: "12px",
                 }}
               />
-            </RadarChart>
+              <Legend />
+              <Bar dataKey="company" fill="#00b386" name="Company" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="industry" fill="#3b82f6" name="Industry Avg" radius={[4, 4, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
 
