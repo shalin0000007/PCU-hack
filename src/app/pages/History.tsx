@@ -1,8 +1,9 @@
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft, Download, Eye } from "lucide-react";
+import { ArrowLeft, Download, Eye, Trash2 } from "lucide-react";
 import Layout from "../components/Layout";
 
-const historyData = [
+const dummyHistoryData = [
   {
     id: "APP-2024-001",
     company: "TechVista Solutions Pvt Ltd",
@@ -71,6 +72,38 @@ const historyData = [
 
 export default function History() {
   const navigate = useNavigate();
+  const [historyData, setHistoryData] = useState<any[]>(dummyHistoryData);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/api/applications")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+            setHistoryData([...data, ...dummyHistoryData]);
+        }
+      })
+      .catch(err => console.error("Failed to fetch history:", err));
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    if (id.startsWith("APP-2024-")) {
+      setHistoryData(prev => prev.filter(app => app.id !== id));
+      return;
+    }
+    
+    try {
+      const res = await fetch(`http://localhost:8000/api/applications/${id}`, {
+        method: "DELETE"
+      });
+      if (res.ok) {
+        setHistoryData(prev => prev.filter(app => app.id !== id));
+      } else {
+        console.error("Failed to delete application from server");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const getRiskColor = (level: string) => {
     switch (level) {
@@ -212,6 +245,13 @@ export default function History() {
                         >
                           <Download className="w-4 h-4" />
                           Report
+                        </button>
+                        <button
+                          onClick={() => handleDelete(app.id)}
+                          className="px-3 py-1.5 text-[#ef4444] hover:bg-[#fee2e2] dark:hover:bg-[#7f1d1d]/20 rounded-lg transition-colors flex items-center gap-1 text-sm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          Delete
                         </button>
                       </div>
                     </td>

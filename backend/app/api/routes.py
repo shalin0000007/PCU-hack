@@ -1,6 +1,7 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
+from typing import Optional
 from app.models.schemas import ApplicationResponse, AnalysisRequest, AnalysisReportResponse
-from app.services.analysis import calculate_risk_score, generate_mock_chart_data
+from app.services.analysis import calculate_risk_score, parse_financial_files
 from app.services.ai_service import generate_risk_summary
 from app.services.news_service import fetch_company_news
 from app.core.config import supabase
@@ -11,36 +12,43 @@ router = APIRouter()
 @router.get("/applications")
 def get_applications():
     if not supabase:
-        raise HTTPException(status_code=500, detail="Supabase not configured")
-        
-    res = supabase.table("applications").select("*, companies(name)").execute()
-    
+        return []
+    res = supabase.table("applications").select("*, companies(name), analysis_reports(*)").order("created_at", desc=True).execute()
     apps = []
-    for app in res.data:
-        report_res = supabase.table("analysis_reports").select("risk_score, risk_level, primary_flag, confidence_score").eq("application_id", app["id"]).order("created_at", desc=True).limit(1).execute()
-        report = report_res.data[0] if report_res.data else {}
+    for item in res.data:
+        comp_name = item.get("companies", {}).get("name") if item.get("companies") else "Unknown"
+        reports = item.get("analysis_reports", [])
+        report = reports[0] if reports else {}
         
         apps.append({
-            "id": app["id"],
-            "company_name": app["companies"]["name"] if app.get("companies") else "Unknown",
-            "loan_amount": float(app["loan_amount"]),
-            "status": app["status"],
-            "risk_score": report.get("risk_score"),
-            "risk_level": report.get("risk_level"),
-            "confidence": report.get("confidence_score"),
-            "flag": report.get("primary_flag")
+            "id": item["id"],
+            "company": comp_name,
+            "loanAmount": f"₹{int(item['loan_amount']):,}",
+            "riskScore": report.get("risk_score", 0),
+            "riskLevel": report.get("risk_level", "medium"),
+            "status": item["status"],
+            "confidence": report.get("confidence_score", 0),
+            "flag": report.get("primary_flag"),
+            "date": item["created_at"].split("T")[0]
         })
-        
     return apps
 
 @router.post("/analyze")
-def start_analysis(request: AnalysisRequest):
+async def start_analysis(
+    company_name: str = Form(...),
+    industry: str = Form(...),
+    loan_amount: float = Form(...),
+    purpose: str = Form(...),
+    external_company: Optional[str] = Form(None),
+    gst_file: Optional[UploadFile] = File(None),
+    bank_file: Optional[UploadFile] = File(None)
+):
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase not configured")
         
-    comp_res = supabase.table("companies").select("id").eq("name", request.company_name).execute()
+    comp_res = supabase.table("companies").select("id").eq("name", company_name).execute()
     if not comp_res.data:
-        new_comp = supabase.table("companies").insert({"name": request.company_name, "industry": request.industry}).execute()
+        new_comp = supabase.table("companies").insert({"name": company_name, "industry": industry}).execute()
         company_id = new_comp.data[0]["id"]
     else:
         company_id = comp_res.data[0]["id"]
@@ -49,18 +57,21 @@ def start_analysis(request: AnalysisRequest):
     supabase.table("applications").insert({
         "id": app_id,
         "company_id": company_id,
-        "loan_amount": request.loan_amount,
-        "purpose": request.purpose,
+        "loan_amount": loan_amount,
+        "purpose": purpose,
         "status": "Processing"
     }).execute()
     
-    score, risk_level, flags = calculate_risk_score(request.loan_amount, request.industry)
+    score, risk_level, flags = calculate_risk_score(loan_amount, industry)
     primary_flag = flags[0] if flags else None
     
-    news = fetch_company_news(request.external_company or request.company_name)
-    ai_summary = generate_risk_summary(request.company_name, score, flags, request.loan_amount)
+    news = fetch_company_news(external_company or company_name)
+    ai_summary = generate_risk_summary(company_name, score, flags, loan_amount)
     
-    chart_data = generate_mock_chart_data()
+    gst_bytes = await gst_file.read() if gst_file else None
+    bank_bytes = await bank_file.read() if bank_file else None
+    
+    chart_data = parse_financial_files(gst_bytes, bank_bytes)
     key_findings = [{"type": "warning", "title": "Flag Detected", "description": f} for f in flags]
     
     report = supabase.table("analysis_reports").insert({
@@ -69,7 +80,7 @@ def start_analysis(request: AnalysisRequest):
         "risk_level": risk_level,
         "confidence_score": 85,
         "ai_summary": ai_summary,
-        "recommended_amount": float(request.loan_amount) * (0.7 if risk_level != 'low' else 1.0),
+        "recommended_amount": float(loan_amount) * (0.7 if risk_level != 'low' else 1.0),
         "manual_review_required": (risk_level == 'high'),
         "primary_flag": primary_flag,
         "key_findings": key_findings,
@@ -87,13 +98,38 @@ def get_analysis_report(application_id: str):
     if not supabase:
         raise HTTPException(status_code=500, detail="Supabase not configured")
         
-    report = supabase.table("analysis_reports").select("*").eq("application_id", application_id).order("created_at", desc=True).limit(1).execute()
-    if not report.data:
-        raise HTTPException(status_code=404, detail="Report not found")
+    app_res = supabase.table("applications").select("*, companies(name, industry)").eq("id", application_id).execute()
+    if not app_res.data:
+        raise HTTPException(status_code=404, detail="Application not found")
         
-    return report.data[0]
+    report_res = supabase.table("analysis_reports").select("*").eq("application_id", application_id).order("created_at", desc=True).limit(1).execute()
+    if not report_res.data:
+        raise HTTPException(status_code=404, detail="Report not generated yet or not found")
+        
+    app_data = app_res.data[0]
+    report_data = report_res.data[0]
+    
+    return {
+        "application": app_data,
+        "report": report_data
+    }
 
 @router.get("/news")
 def get_news(company: str):
     news = fetch_company_news(company)
     return {"company": company, "news": news}
+
+@router.delete("/applications/{application_id}")
+def delete_application(application_id: str):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+        
+    # Delete cascaded artifacts to satisfy foreign key structure
+    supabase.table("analysis_reports").delete().eq("application_id", application_id).execute()
+    
+    res = supabase.table("applications").delete().eq("id", application_id).execute()
+    
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Application not found")
+        
+    return {"message": "Application deleted successfully"}

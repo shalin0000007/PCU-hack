@@ -31,9 +31,37 @@ export default function NewApplication() {
     });
   };
 
-  const handleStartAnalysis = () => {
-    const appId = "APP-2024-" + Math.floor(Math.random() * 1000).toString().padStart(3, "0");
-    navigate(`/analysis-process/${appId}`);
+  const handleStartAnalysis = async () => {
+    if (!formData.companyName || !formData.loanAmount) {
+      alert("Please enter at least the company name and loan amount.");
+      return;
+    }
+
+    const data = new FormData();
+    data.append("company_name", formData.companyName);
+    data.append("industry", formData.industry);
+    data.append("loan_amount", formData.loanAmount.toString());
+    data.append("purpose", formData.purpose);
+    if (formData.externalCompany) data.append("external_company", formData.externalCompany);
+    if (formData.gstFile) data.append("gst_file", formData.gstFile);
+    if (formData.bankFile) data.append("bank_file", formData.bankFile);
+
+    try {
+      const response = await fetch("http://localhost:8000/api/analyze", {
+        method: "POST",
+        body: data,
+      });
+      const result = await response.json();
+
+      if (response.ok && result.application_id) {
+        navigate(`/analysis-process/${result.application_id}`);
+      } else {
+        alert("Failed to start analysis: " + (result.detail || "Unknown error"));
+      }
+    } catch (err) {
+      console.error("Analysis Error:", err);
+      alert("Failed to connect to the backend server. Please make sure the FastAPI server is running.");
+    }
   };
 
   return (
