@@ -98,60 +98,79 @@ export default function CreditRiskAnalysis() {
   const navigate = useNavigate();
   const { id } = useParams();
   const [reportData, setReportData] = useState<any>(null);
+  const [aiAssessment, setAiAssessment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState<string>("All Time");
+  const [liveNews, setLiveNews] = useState<any[] | null>(null);
 
   useEffect(() => {
-    fetch(`http://localhost:8000/api/analysis/${id}`)
-      .then(res => {
-        if (!res.ok) throw new Error("Analysis not found on server");
+    if (reportData?.application?.companies?.name && reportData.application.companies.name !== "Unknown Company") {
+      fetch(`http://localhost:8000/api/news?company=${encodeURIComponent(reportData.application.companies.name)}`)
+        .then(res => res.json())
+        .then(data => {
+            if (data.news) setLiveNews(data.news);
+        })
+        .catch(err => console.error("Error fetching live news:", err));
+    }
+  }, [reportData]);
+
+  useEffect(() => {
+    Promise.all([
+      fetch(`http://localhost:8000/api/analysis/${id}`).then(res => {
+        if (!res.ok) throw new Error("Failed to fetch analysis");
+        return res.json();
+      }),
+      fetch(`http://localhost:8000/api/ai-assessment/${id}`).then(res => {
+        if (!res.ok) throw new Error("Failed to fetch ai");
         return res.json();
       })
-      .then(data => {
-        setReportData(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.warn("API report not found, falling back to dummy data. Error:", err);
-        const companyRegistry: Record<string, string> = {
-          "APP-2024-001": "TechVista Solutions Pvt Ltd",
-          "APP-2024-002": "Global Exports & Trading Co",
-          "APP-2024-003": "Urban Construction Ltd",
-          "APP-2024-004": "Fresh Farms Agriculture",
-          "APP-2024-005": "Retail Chain Ventures",
-          "APP-2024-006": "Innovative Software Labs"
-        };
-        const companyFallback = companyRegistry[id || "APP-2024-001"] || "TechVista Solutions Pvt Ltd";
-        
-        setReportData({
-          application: {
-            loan_amount: 5000000,
-            companies: { name: companyFallback }
+    ])
+    .then(([analysisData, aiData]) => {
+      setReportData(analysisData);
+      setAiAssessment(aiData);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.warn("Error fetching report data, falling back to dummy data. Error:", err);
+      const companyRegistry: Record<string, string> = {
+        "APP-2024-001": "TechVista Solutions Pvt Ltd",
+        "APP-2024-002": "Global Exports & Trading Co",
+        "APP-2024-003": "Urban Construction Ltd",
+        "APP-2024-004": "Fresh Farms Agriculture",
+        "APP-2024-005": "Retail Chain Ventures",
+        "APP-2024-006": "Innovative Software Labs"
+      };
+      const companyFallback = companyRegistry[id || "APP-2024-001"] || "TechVista Solutions Pvt Ltd";
+      
+      setReportData({
+        application: {
+          loan_amount: 5000000,
+          companies: { name: companyFallback }
+        },
+        report: {
+          created_at: new Date().toISOString(),
+          risk_score: 56,
+          risk_level: "medium",
+          ai_summary: "The medium risk classification is driven by a 15% GST-Bank revenue mismatch and a debt ratio of 0.68 (vs industry avg 0.52). However, the company demonstrates consistent 18% YoY growth and acceptable liquidity ratios. Recommendation: Approve ₹35L (70% of requested amount) with enhanced monitoring and quarterly reviews.",
+          confidence_score: 78,
+          manual_review_required: true,
+          recommended_amount: 3500000,
+          key_findings: [
+            { title: "Revenue Mismatch Detected", description: "15% discrepancy between GST and bank credits" },
+            { title: "Cash Flow Irregularities", description: "Unusual transaction patterns in Q3" },
+            { title: "Consistent Growth Pattern", description: "18% YoY revenue growth maintained" },
+            { title: "High Debt Ratio", description: "0.68 vs industry average of 0.52" }
+          ],
+          chart_data: {
+            gst_vs_bank: gstVsBankDataFallback,
+            cash_flow: cashFlowDataFallback,
+            industry_insights: industryInsightsFallback
           },
-          report: {
-            created_at: new Date().toISOString(),
-            risk_score: 56,
-            risk_level: "medium",
-            ai_summary: "The medium risk classification is driven by a 15% GST-Bank revenue mismatch and a debt ratio of 0.68 (vs industry avg 0.52). However, the company demonstrates consistent 18% YoY growth and acceptable liquidity ratios. Recommendation: Approve ₹35L (70% of requested amount) with enhanced monitoring and quarterly reviews.",
-            confidence_score: 78,
-            manual_review_required: true,
-            recommended_amount: 3500000,
-            key_findings: [
-              { title: "Revenue Mismatch Detected", description: "15% discrepancy between GST and bank credits" },
-              { title: "Cash Flow Irregularities", description: "Unusual transaction patterns in Q3" },
-              { title: "Consistent Growth Pattern", description: "18% YoY revenue growth maintained" },
-              { title: "High Debt Ratio", description: "0.68 vs industry average of 0.52" }
-            ],
-            chart_data: {
-              gst_vs_bank: gstVsBankDataFallback,
-              cash_flow: cashFlowDataFallback,
-              industry_insights: industryInsightsFallback
-            },
-            news_data: newsDataFallback
-          }
-        });
-        setLoading(false);
+          news_data: newsDataFallback
+        }
       });
+      setLoading(false);
+    });
   }, [id]);
 
   const getSentimentColor = (sentiment: string) => {
@@ -195,7 +214,14 @@ export default function CreditRiskAnalysis() {
   const { application, report } = reportData;
   const companyName = application?.companies?.name || "Unknown Company";
   
-  const newsList = report.news_data || [];
+  const riskScore = aiAssessment?.score ?? report?.risk_score ?? 56;
+  const riskLevel = aiAssessment?.risk_level ?? report?.risk_level ?? "medium";
+  const confidenceLevel = aiAssessment?.confidence ?? report?.confidence_score ?? 78;
+  const aiExplanation = aiAssessment?.summary ?? report?.ai_summary ?? "The medium risk classification is primarily driven by a combination of financial inconsistencies and debt exposure.";
+  const keyFindings = aiAssessment?.key_findings?.length ? aiAssessment?.key_findings : report?.key_findings ?? [];
+  const recommendedAmount = report?.recommended_amount || 3500000;
+  
+  const newsList = liveNews || report.news_data || [];
   
   let rawGstBankData = report.chart_data?.gst_vs_bank || [];
   const mappedGstBankData = rawGstBankData.map((d: any) => {
@@ -227,7 +253,6 @@ export default function CreditRiskAnalysis() {
 
   const cashFlowData = report.chart_data?.cash_flow || [];
   const industryInsights = report.chart_data?.industry_insights || [];
-  const keyFindings = report.key_findings || [];
 
   return (
     <Layout>
@@ -269,14 +294,14 @@ export default function CreditRiskAnalysis() {
             <div>
               <p className="text-sm text-[#737373] dark:text-[#94a3b8] mb-2">Overall Risk Score</p>
               <div className="flex items-end gap-3">
-                <h2 className="text-5xl text-[#1a1a1a] dark:text-white">{report.risk_score}</h2>
+                <h2 className="text-5xl text-[#1a1a1a] dark:text-white">{riskScore}</h2>
                 <span className="text-2xl text-[#f59e0b] mb-1">/ 100</span>
               </div>
               <div className="flex items-center gap-2 mt-3">
-                <span className={`px-4 py-1 rounded-full text-sm ${report.risk_level === 'high' ? 'bg-[#fee2e2] text-[#ef4444] dark:bg-[#7f1d1d]/40 dark:text-[#fca5a5]' : report.risk_level === 'medium' ? 'bg-[#fef3c7] text-[#f59e0b] dark:bg-[#78350f]/40 dark:text-[#fcd34d]' : 'bg-[#d1fae5] text-[#10b981] dark:bg-[#065f46]/40 dark:text-[#6ee7b7]'}`}>
-                  {report.risk_level.toUpperCase()} Risk
+                <span className={`px-4 py-1 rounded-full text-sm ${riskLevel === 'high' ? 'bg-[#fee2e2] text-[#ef4444] dark:bg-[#7f1d1d]/40 dark:text-[#fca5a5]' : riskLevel === 'medium' ? 'bg-[#fef3c7] text-[#f59e0b] dark:bg-[#78350f]/40 dark:text-[#fcd34d]' : 'bg-[#d1fae5] text-[#10b981] dark:bg-[#065f46]/40 dark:text-[#6ee7b7]'}`}>
+                  {riskLevel.toUpperCase()} Risk
                 </span>
-                {report.risk_score < 50 ? (
+                {riskScore < 50 ? (
                   <TrendingDown className="w-5 h-5 text-[#ef4444]" />
                 ) : (
                   <TrendingUp className="w-5 h-5 text-[#10b981]" />
@@ -309,12 +334,12 @@ export default function CreditRiskAnalysis() {
             <div className="space-y-3">
               <h3 className="text-xl">AI Risk Assessment Summary</h3>
               <p className="text-base opacity-95 leading-relaxed">
-                {report.ai_summary}
+                {aiExplanation}
               </p>
               <div className="flex gap-3 pt-2">
                 <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl">
                   <p className="text-xs opacity-75">Confidence</p>
-                  <p className="text-lg">{report.confidence_score}%</p>
+                  <p className="text-lg">{confidenceLevel}%</p>
                 </div>
                 <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl">
                   <p className="text-xs opacity-75">Risk Factors</p>
@@ -322,7 +347,7 @@ export default function CreditRiskAnalysis() {
                 </div>
                 <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl">
                   <p className="text-xs opacity-75">Manual Review</p>
-                  <p className="text-lg">{report.manual_review_required ? "Required" : "Recommended"}</p>
+                  <p className="text-lg">{aiAssessment?.manual_review ? "Recommended" : "Not Required"}</p>
                 </div>
               </div>
             </div>
@@ -490,7 +515,12 @@ export default function CreditRiskAnalysis() {
                       {news.sentiment}
                     </span>
                   </div>
-                  <p className="text-xs text-[#737373] dark:text-[#94a3b8] leading-relaxed line-clamp-3">{news.summary}</p>
+                  {(() => {
+                    const aiExplanation = news.summary;
+                    return (
+                      <p className="text-sm text-[#737373] dark:text-[#94a3b8] leading-relaxed">{aiExplanation}</p>
+                    );
+                  })()}
                   <a href={news.url || "#"} target="_blank" rel="noopener noreferrer" className="inline-flex mt-2 text-xs text-[#00b386] items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     Read more <ExternalLink className="w-3 h-3" />
                   </a>

@@ -9,6 +9,7 @@ export default function ReportPreview() {
   const { id } = useParams();
   
   const [reportData, setReportData] = useState<any>(null);
+  const [aiAssessment, setAiAssessment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   
   const [chatOpen, setChatOpen] = useState(false);
@@ -18,19 +19,25 @@ export default function ReportPreview() {
   const [inputMessage, setInputMessage] = useState("");
 
   useEffect(() => {
-    fetch(`http://localhost:8000/api/analysis/${id}`)
-      .then(res => {
-        if (!res.ok) throw new Error("Failed to fetch");
+    Promise.all([
+      fetch(`http://localhost:8000/api/analysis/${id}`).then(res => {
+        if (!res.ok) throw new Error("Failed to fetch analysis");
+        return res.json();
+      }),
+      fetch(`http://localhost:8000/api/ai-assessment/${id}`).then(res => {
+        if (!res.ok) throw new Error("Failed to fetch ai");
         return res.json();
       })
-      .then(data => {
-        setReportData(data);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error("Error fetching report data:", err);
-        setLoading(false);
-      });
+    ])
+    .then(([analysisData, aiData]) => {
+      setReportData(analysisData);
+      setAiAssessment(aiData);
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error("Error fetching report data:", err);
+      setLoading(false);
+    });
   }, [id]);
 
   const application = reportData?.application || {};
@@ -41,11 +48,12 @@ export default function ReportPreview() {
   const displayId = application?.id || id;
   const analysisDate = report?.created_at ? new Date(report.created_at).toLocaleDateString() : "March 19, 2026";
   
-  const riskScore = report?.risk_score || 56;
-  const riskLevel = report?.risk_level || "medium";
-  const confidenceLevel = report?.confidence_score || 78;
-  const keyFindings = report?.key_findings || [];
-  const aiExplanation = report?.ai_summary || "The medium risk classification is primarily driven by a combination of financial inconsistencies and debt exposure. Key concerns include a 15% mismatch between GST-reported revenue and actual bank credits, suggesting potential revenue recognition issues. The debt ratio of 0.68 is higher than the industry average, indicating elevated financial leverage. However, consistent revenue growth and acceptable liquidity ratios partially offset these concerns.";
+  const riskScore = aiAssessment?.score ?? report?.risk_score ?? 56;
+  const riskLevel = aiAssessment?.risk_level ?? report?.risk_level ?? "medium";
+  const confidenceLevel = aiAssessment?.confidence ?? report?.confidence_score ?? 78;
+  const aiExplanation = aiAssessment?.summary ?? report?.ai_summary ?? "The medium risk classification is primarily driven by a combination of financial inconsistencies and debt exposure.";
+  const keyFindings = aiAssessment?.key_findings?.length ? aiAssessment?.key_findings : report?.key_findings ?? [];
+  
   const recommendedAmount = report?.recommended_amount || 3500000;
 
   const getRiskColor = (level: string) => {
@@ -220,6 +228,12 @@ export default function ReportPreview() {
                       <div className="flex justify-between">
                         <span className="text-[#737373] dark:text-[#94a3b8]">Risk Factors</span>
                         <span className="text-[#1a1a1a] dark:text-white">{keyFindings.length} Detected</span>
+                      </div>
+                      <div className="flex justify-between mt-2 pt-2 border-t border-[#e5e5e5] dark:border-[#334155]">
+                        <span className="text-[#737373] dark:text-[#94a3b8]">Manual Review</span>
+                        <span className={`font-medium ${aiAssessment?.manual_review ? 'text-[#ef4444] dark:text-[#fca5a5]' : 'text-[#10b981] dark:text-[#6ee7b7]'}`}>
+                          {aiAssessment?.manual_review ? "Recommended" : "Not Required"}
+                        </span>
                       </div>
                     </div>
                   </div>

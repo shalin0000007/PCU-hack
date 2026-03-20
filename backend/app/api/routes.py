@@ -134,6 +134,42 @@ def delete_application(application_id: str):
         
     return {"message": "Application deleted successfully"}
 
+@router.get("/ai-assessment/{application_id}")
+def get_ai_assessment(application_id: str):
+    if not supabase: raise HTTPException(status_code=500, detail="Supabase not configured")
+        
+    res = supabase.table("ai_risk_assessments").select("*").eq("application_id", application_id).execute()
+    if res.data:
+        return res.data[0]
+        
+    app_res = supabase.table("applications").select("*, companies(name)").eq("id", application_id).execute()
+    if not app_res.data:
+        raise HTTPException(status_code=404, detail="App not found")
+        
+    company_name = app_res.data[0].get("companies", {}).get("name", "Unknown")
+    
+    report_res = supabase.table("analysis_reports").select("*").eq("application_id", application_id).order("created_at", desc=True).limit(1).execute()
+    if not report_res.data:
+        raise HTTPException(status_code=404, detail="Report not generated")
+        
+    chart_data = report_res.data[0].get("chart_data", {})
+    news_data = report_res.data[0].get("news_data", [])
+    
+    from app.services.ai_service import generate_ai_risk_assessment
+    assessment = generate_ai_risk_assessment(company_name, chart_data, news_data)
+    
+    ins_res = supabase.table("ai_risk_assessments").insert({
+        "application_id": application_id,
+        "score": assessment.get("score", 50),
+        "risk_level": assessment.get("risk_level", "medium"),
+        "confidence": assessment.get("confidence", 50),
+        "manual_review": assessment.get("manual_review", True),
+        "summary": assessment.get("summary", ""),
+        "key_findings": assessment.get("key_findings", [])
+    }).execute()
+    
+    return ins_res.data[0]
+
 @router.post("/chat")
 def chat_endpoint(req: ChatRequest):
     from app.services.ai_service import chat_with_agent
