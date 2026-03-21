@@ -60,7 +60,7 @@ export default function NewApplication() {
       }
     } catch (err) {
       console.error("Analysis Error:", err);
-      alert("Failed to connect to the server. Please try again later.");
+      alert("Failed to connect to the backend server. Please make sure the FastAPI server is running.");
     }
   };
 
