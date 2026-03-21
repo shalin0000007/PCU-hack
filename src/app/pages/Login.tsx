@@ -1,212 +1,317 @@
-import { useState, FormEvent } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Eye, EyeOff, Mail, Lock, TrendingUp, Shield, Sparkles } from "lucide-react";
-import { useAuth } from "../contexts/AuthContext";
+import { Eye, EyeOff, Lock, User, Sparkles, Shield, Zap } from "lucide-react";
+import { supabase } from "../../supabase";
+import { motion } from "motion/react";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { login, isLoading: authLoading } = useAuth();
-  
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false); // New toggle state
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+    fullName: "",
+  });
+  const [success, setSuccess] = useState("");
 
-  const handleLogin = async (e: FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Please enter both email and password");
-      return;
-    }
-    
-    setIsLoading(true);
     setError("");
+    setLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
-        navigate("/dashboard");
+      if (isSignUp) {
+        // Explicit Sign Up Logic
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: formData.username,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.fullName
+            }
+          }
+        });
+
+        if (signUpError) {
+          setError(signUpError.message);
+          setLoading(false);
+          return;
+        }
+
+        if (signUpData.session) {
+          localStorage.setItem("intelli-credit-auth", JSON.stringify({
+            isLoggedIn: true,
+            username: formData.username,
+            fullName: formData.fullName || signUpData.session.user?.user_metadata?.full_name || "",
+            loginTime: new Date().toISOString(),
+            token: signUpData.session.access_token
+          }));
+          navigate("/dashboard");
+        } else {
+          setError("Account created! Please check your email for a confirmation link.");
+          setIsSignUp(false); // switch to login mode after successful signup step
+        }
       } else {
-        setError("Invalid credentials. Please try again.");
+        // Explicit Sign In Logic
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.username,
+          password: formData.password,
+        });
+
+        if (signInError) {
+          setError(signInError.message);
+          setLoading(false);
+          return;
+        }
+
+        if (signInData.session) {
+          localStorage.setItem("intelli-credit-auth", JSON.stringify({
+            isLoggedIn: true,
+            username: formData.username,
+            fullName: signInData.session.user?.user_metadata?.full_name || "",
+            loginTime: new Date().toISOString(),
+            token: signInData.session.access_token
+          }));
+          navigate("/dashboard");
+        }
       }
-    } catch (err) {
-      setError("Login failed. Please check your connection.");
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred.");
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleDemoLogin = () => {
-    setEmail("demo@intellicredit.ai");
-    setPassword("demo123");
+  const handleForgotPassword = async () => {
+    if (!formData.username) {
+      setError("Please enter your email address first.");
+      return;
+    }
+    setError("");
+    setSuccess("");
+    setLoading(true);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(formData.username, {
+        redirectTo: window.location.origin + "/reset-password",
+      });
+      if (resetError) throw resetError;
+      setSuccess("Password reset link sent! Check your inbox.");
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset email.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50">
-      {/* Left Panel - Branding */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-emerald-600 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-20 left-20 w-40 h-40 rounded-full bg-white/20 blur-3xl" />
-          <div className="absolute bottom-40 right-20 w-60 h-60 rounded-full bg-white/20 blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 w-80 h-80 rounded-full bg-white/10 blur-3xl -translate-x-1/2 -translate-y-1/2" />
-        </div>
+    <div className="min-h-screen bg-[#0b1326] flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated Gradient Background Orbs */}
+      <motion.div
+        className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] bg-[#00b386]/8 rounded-full blur-[120px]"
+        animate={{ scale: [1, 1.3, 1], x: [0, 40, 0], y: [0, 30, 0] }}
+        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute bottom-[-15%] right-[-10%] w-[600px] h-[600px] bg-[#1e40af]/8 rounded-full blur-[150px]"
+        animate={{ scale: [1.2, 1, 1.2], x: [0, -50, 0] }}
+        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute top-[40%] right-[20%] w-[300px] h-[300px] bg-[#50ddad]/5 rounded-full blur-[100px]"
+        animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0.6, 0.3] }}
+        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+      />
 
-        <div className="relative z-10 flex flex-col justify-center px-16 text-white">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <TrendingUp className="w-8 h-8" />
+      {/* Login Card — Glassmorphism */}
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.7, ease: "easeOut" }}
+        className="w-full max-w-md relative z-10"
+      >
+        <div className="bg-white/[0.04] backdrop-blur-2xl rounded-2xl shadow-[0_24px_48px_rgba(6,14,32,0.5)] border border-white/[0.06] p-8">
+          {/* Logo */}
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            className="text-center mb-8"
+          >
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#50ddad] to-[#00b386] rounded-2xl mb-4 shadow-[0_0_30px_rgba(80,221,173,0.25)]">
+              <Sparkles className="w-8 h-8 text-white" />
             </div>
-            <div>
-              <h1 className="text-3xl font-bold font-headline">Intelli-Credit</h1>
-              <p className="text-emerald-100 text-sm">AI Risk Engine</p>
-            </div>
-          </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#50ddad] to-[#00b386] bg-clip-text text-transparent mb-2">
+              Intelli-Credit AI
+            </h1>
+            <p className="text-[#86948c] text-sm">
+              {isSignUp ? "Create a New Officer Account" : "AI-Powered Credit Risk Analysis Platform"}
+            </p>
+          </motion.div>
 
-          <h2 className="text-4xl font-bold mb-6 leading-tight font-headline">
-            Smarter Credit Decisions,<br />Powered by AI
-          </h2>
-
-          <p className="text-lg text-emerald-100 mb-10 max-w-md">
-            Transform your credit risk assessment with advanced machine learning. Analyze GST returns, bank statements, and market data in seconds.
-          </p>
-
-          <div className="space-y-4">
-            {[
-              { icon: Shield, text: "Multi-source data verification" },
-              { icon: Sparkles, text: "AI-powered risk scoring" },
-              { icon: TrendingUp, text: "Real-time market analysis" },
-            ].map((feature, idx) => (
-              <div key={idx} className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <feature.icon className="w-5 h-5" />
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Full Name (Only for Sign Up) */}
+            {isSignUp && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} transition={{ delay: 0.1 }}>
+                <label className="block text-xs font-medium text-[#86948c] uppercase tracking-wider mb-2">Full Name</label>
+                <div className="relative group">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3c4a43] group-focus-within:text-[#50ddad] transition-colors" />
+                  <input
+                    type="text"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    className="w-full pl-11 pr-4 py-3 bg-[#060e20] border border-[#1e293b] rounded-xl focus:ring-2 focus:ring-[#50ddad]/30 focus:border-[#50ddad]/40 outline-none transition-all text-[#dae2fd] placeholder-[#3c4a43] text-sm"
+                    placeholder="E.g. Rajesh Kumar"
+                    required={isSignUp}
+                  />
                 </div>
-                <span className="text-emerald-50">{feature.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Right Panel - Login Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-on-surface font-headline">Intelli-Credit</h1>
-              <p className="text-sm text-muted-foreground">AI Risk Engine</p>
-            </div>
-          </div>
-
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl p-8 border border-outline-variant/20">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-on-surface font-headline">Welcome Back</h2>
-              <p className="text-muted-foreground mt-2">Sign in to access your dashboard</p>
-            </div>
-
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-                <p className="text-sm text-red-700 text-center">{error}</p>
-              </div>
+              </motion.div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-2">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3 bg-surface-container border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    placeholder="you@company.com"
-                    required
-                  />
-                </div>
+            {/* Username/Email */}
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
+              <label className="block text-xs font-medium text-[#86948c] uppercase tracking-wider mb-2">Email Address</label>
+              <div className="relative group">
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3c4a43] group-focus-within:text-[#50ddad] transition-colors" />
+                <input
+                  type="email"
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                  className="w-full pl-11 pr-4 py-3 bg-[#060e20] border border-[#1e293b] rounded-xl focus:ring-2 focus:ring-[#50ddad]/30 focus:border-[#50ddad]/40 outline-none transition-all text-[#dae2fd] placeholder-[#3c4a43] text-sm"
+                  placeholder="officer.id@intellicredit.ai"
+                  required
+                />
               </div>
+            </motion.div>
 
-              <div>
-                <label className="block text-sm font-medium text-on-surface mb-2">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-12 pr-12 py-3 bg-surface-container border border-outline-variant rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
-                    placeholder="••••••••"
-                    required
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-on-surface transition-colors"
-                  >
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
+            {/* Password */}
+            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }}>
+              <label className="block text-xs font-medium text-[#86948c] uppercase tracking-wider mb-2">Password</label>
+              <div className="relative group">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3c4a43] group-focus-within:text-[#50ddad] transition-colors" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={formData.password}
+                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  className="w-full pl-11 pr-12 py-3 bg-[#060e20] border border-[#1e293b] rounded-xl focus:ring-2 focus:ring-[#50ddad]/30 focus:border-[#50ddad]/40 outline-none transition-all text-[#dae2fd] placeholder-[#3c4a43] text-sm"
+                  placeholder="••••••••"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#3c4a43] hover:text-[#50ddad] transition-colors cursor-pointer"
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
+            </motion.div>
 
-              <div className="flex items-center justify-between text-sm">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/30"
-                  />
-                  <span className="text-muted-foreground">Remember me</span>
-                </label>
-                <a href="#" className="text-primary hover:underline font-medium">
-                  Forgot password?
-                </a>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading || authLoading}
-                className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-semibold hover:bg-primary/90 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            {/* Success Message */}
+            {success && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 bg-[#10b981]/10 border border-[#10b981]/20 rounded-xl"
               >
-                {isLoading || authLoading ? (
+                <p className="text-sm text-[#10b981] text-center">{success}</p>
+              </motion.div>
+            )}
+
+            {/* Error */}
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 bg-[#ef4444]/10 border border-[#ef4444]/20 rounded-xl"
+              >
+                <p className="text-sm text-[#ef4444] text-center">{error}</p>
+              </motion.div>
+            )}
+
+            {/* Remember & Forgot / Switch Mode */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex items-center justify-between text-sm">
+              <label className="flex items-center cursor-pointer">
+                {!isSignUp && (
                   <>
-                    <Sparkles className="w-5 h-5 animate-pulse" />
-                    Signing in...
+                    <input type="checkbox" className="w-4 h-4 rounded border-[#1e293b] bg-[#060e20] text-[#50ddad] focus:ring-[#50ddad]/30" />
+                    <span className="ml-2 text-[#86948c]">Remember me</span>
                   </>
-                ) : (
-                  "Sign In"
                 )}
-              </button>
-            </form>
+              </label>
+              {!isSignUp && (
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-[#50ddad] hover:text-[#71fac8] font-medium transition-colors bg-transparent border-none cursor-pointer p-0"
+                >
+                  Forgot password?
+                </button>
+              )}
+            </motion.div>
 
-            <div className="mt-6 pt-6 border-t border-outline-variant/20">
-              <button
-                onClick={handleDemoLogin}
-                className="w-full py-3 border-2 border-dashed border-primary/30 text-primary rounded-xl font-medium hover:bg-primary/5 transition-all flex items-center justify-center gap-2"
-              >
-                <Sparkles className="w-4 h-4" />
-                Use Demo Credentials
-              </button>
-              <p className="text-xs text-muted-foreground text-center mt-3">
-                Click to auto-fill demo account credentials
-              </p>
+            {/* Sign In / Sign Up Button */}
+            <motion.button
+              type="submit"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="w-full py-3.5 bg-gradient-to-r from-[#50ddad] to-[#00b386] text-[#003828] rounded-xl font-semibold shadow-[0_8px_32px_rgba(0,179,134,0.3)] hover:shadow-[0_12px_40px_rgba(0,179,134,0.4)] transition-all disabled:opacity-60 cursor-pointer"
+              disabled={loading}
+            >
+              {loading ? "Processing..." : isSignUp ? "Create Account" : "Sign In"}
+            </motion.button>
+          </form>
+
+          {/* Registration Toggle Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-[#1e293b]" />
+            </div>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-4 bg-[#131b2e]/80 text-[#3c4a43] uppercase tracking-widest">
+                {isSignUp ? "Already Registered?" : "New to Intelli-Credit?"}
+              </span>
             </div>
           </div>
 
-          <p className="text-center text-sm text-muted-foreground mt-6">
-            Don't have an account?{" "}
-            <a href="#" className="text-primary hover:underline font-medium">
-              Contact your administrator
-            </a>
-          </p>
+          <div className="flex justify-center text-sm">
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError("");
+              }}
+              className="text-[#86948c] hover:text-[#dae2fd] transition-colors"
+            >
+              {isSignUp ? (
+                <>Already have an account? <span className="text-[#50ddad] font-semibold">Sign In here</span></>
+              ) : (
+                <>Don't have an officer ID? <span className="text-[#50ddad] font-semibold">Sign Up here</span></>
+              )}
+            </button>
+          </div>
+
+          {/* Trust Indicators */}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="mt-8 flex items-center justify-center gap-6 text-[10px] text-[#3c4a43] uppercase tracking-wider">
+            <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-[#50ddad]" /> Secure</span>
+            <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-[#50ddad]" /> Enterprise</span>
+            <span className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[#50ddad]" /> AI-Powered</span>
+          </motion.div>
         </div>
-      </div>
+
+        {/* Footer */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="text-center mt-6">
+          <p className="text-xs text-[#3c4a43]">
+            © 2026 Intelli-Credit AI • Sovereign Financial Intelligence
+          </p>
+        </motion.div>
+      </motion.div>
     </div>
   );
 }

@@ -1,297 +1,256 @@
-import { useState } from "react";
-import {
-  User,
-  Bell,
-  Shield,
-  Palette,
-  Database,
-  Key,
-  Save,
-  Moon,
-  Sun,
-  Globe,
-  Mail,
-} from "lucide-react";
+import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
+import { User, Bell, Lock, Palette, Check, Sparkles } from "lucide-react";
+import { motion } from "motion/react";
 
 export default function Settings() {
-  const [activeTab, setActiveTab] = useState("profile");
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [highRiskAlerts, setHighRiskAlerts] = useState(true);
+  const [analysisComplete, setAnalysisComplete] = useState(true);
+  const [weeklyReports, setWeeklyReports] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const tabs = [
-    { id: "profile", label: "Profile", icon: User },
-    { id: "notifications", label: "Notifications", icon: Bell },
-    { id: "security", label: "Security", icon: Shield },
-    { id: "appearance", label: "Appearance", icon: Palette },
-    { id: "api", label: "API Keys", icon: Key },
-  ];
+  // Load from localStorage on mount prioritizing Auth
+  useEffect(() => {
+    let initialName = "";
+    let initialEmail = "";
+
+    const auth = localStorage.getItem("intelli-credit-auth");
+    if (auth) {
+      try {
+        const parsed = JSON.parse(auth);
+        if (parsed.fullName) initialName = parsed.fullName;
+        if (parsed.username) initialEmail = parsed.username;
+        if (!initialName && initialEmail) {
+          const prefix = initialEmail.split("@")[0];
+          initialName = prefix.split(/[._-]/).map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+        }
+      } catch (e) {}
+    }
+
+    const settings = localStorage.getItem("intelli-credit-settings");
+    if (settings) {
+      try {
+        const parsed = JSON.parse(settings);
+        if (parsed.highRiskAlerts !== undefined) setHighRiskAlerts(parsed.highRiskAlerts);
+        if (parsed.analysisComplete !== undefined) setAnalysisComplete(parsed.analysisComplete);
+        if (parsed.weeklyReports !== undefined) setWeeklyReports(parsed.weeklyReports);
+        // Auth overwrites settings name if auth exists, otherwise fallback
+        if (!initialName && parsed.fullName) initialName = parsed.fullName;
+        if (!initialEmail && parsed.email) initialEmail = parsed.email;
+      } catch (e) {}
+    }
+
+    setFullName(initialName || "Guest Officer");
+    setEmail(initialEmail || "guest@intellicredit.ai");
+  }, []);
+
+  const handleSave = () => {
+    localStorage.setItem(
+      "intelli-credit-settings",
+      JSON.stringify({ fullName, email, highRiskAlerts, analysisComplete, weeklyReports })
+    );
+    // Also update auth if they change their name
+    const auth = localStorage.getItem("intelli-credit-auth");
+    if (auth) {
+      try {
+        const parsed = JSON.parse(auth);
+        parsed.fullName = fullName;
+        localStorage.setItem("intelli-credit-auth", JSON.stringify(parsed));
+      } catch (e) {}
+    }
+
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+    window.dispatchEvent(new Event("storage")); // trigger Layout update if needed
+  };
 
   return (
     <Layout>
-      <div className="p-6 bg-surface min-h-screen">
-        <div className="max-w-5xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-on-surface font-headline">Settings</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Manage your account settings and preferences
-            </p>
+      <div className="p-6 space-y-6 max-w-6xl mx-auto">
+        <div>
+          <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#1a1a1a] to-[#737373] dark:from-[#dae2fd] dark:to-[#86948c]">Officer Settings</h1>
+          <p className="text-sm text-[#737373] dark:text-[#86948c] mt-1">
+            Manage your sovereign platform preferences and account security
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Profile Settings */}
+          <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-[20px] shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] p-6">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#e5e5e5] dark:border-white/[0.06]">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#e5f7f3] to-[#d1fae5] dark:from-[#00b386]/20 dark:to-[#059669]/10 rounded-xl flex items-center justify-center border border-transparent dark:border-[#00b386]/20">
+                 <User className="w-5 h-5 text-[#00b386] dark:text-[#50ddad]" />
+              </div>
+              <div>
+                 <h3 className="text-lg font-semibold text-[#1a1a1a] dark:text-[#dae2fd]">Profile Information</h3>
+                 <p className="text-xs text-[#737373] dark:text-[#86948c]">Active session identity</p>
+              </div>
+            </div>
+            
+            <div className="space-y-5">
+              <div>
+                <label className="text-xs font-semibold text-[#86948c] uppercase tracking-wider">Full Name</label>
+                <input
+                  type="text"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="mt-2 w-full px-4 py-3 bg-[#f5f5f5] dark:bg-[#060e20] border border-[#e5e5e5] dark:border-[#1e293b] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#50ddad]/30 focus:border-[#50ddad]/40 transition-all text-[#1a1a1a] dark:text-[#dae2fd] text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#86948c] uppercase tracking-wider">Email (Supabase Identity)</label>
+                <input
+                  type="email"
+                  value={email}
+                  disabled
+                  className="mt-2 w-full px-4 py-3 bg-[#e5e5e5] dark:bg-[#060e20]/50 border border-[#d4d4d8] dark:border-[#1e293b]/50 rounded-xl focus:outline-none text-[#737373] dark:text-[#86948c] text-sm opacity-70 cursor-not-allowed"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#86948c] uppercase tracking-wider">Global Role</label>
+                <div className="mt-2 flex items-center gap-2 px-4 py-3 bg-[#f5f5f5] dark:bg-[#060e20] border border-[#e5e5e5] dark:border-[#1e293b] rounded-xl text-sm">
+                   <Sparkles className="w-4 h-4 text-[#50ddad]" />
+                   <span className="text-[#1a1a1a] dark:text-[#50ddad] font-medium">Senior Credit Officer</span>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="flex gap-8">
-            {/* Sidebar Navigation */}
-            <div className="w-64 space-y-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
-                    activeTab === tab.id
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "text-muted-foreground hover:bg-surface-container-high hover:text-on-surface"
-                  }`}
-                >
-                  <tab.icon className="w-5 h-5" />
-                  {tab.label}
-                </button>
-              ))}
+          {/* Notification Preferences */}
+          <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-[20px] shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] p-6">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#e5e5e5] dark:border-white/[0.06]">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#e5f7f3] to-[#d1fae5] dark:from-[#3b82f6]/20 dark:to-[#2563eb]/10 rounded-xl flex items-center justify-center border border-transparent dark:border-[#3b82f6]/20">
+                 <Bell className="w-5 h-5 text-[#00b386] dark:text-[#60a5fa]" />
+              </div>
+              <div>
+                 <h3 className="text-lg font-semibold text-[#1a1a1a] dark:text-[#dae2fd]">Notifications</h3>
+                 <p className="text-xs text-[#737373] dark:text-[#86948c]">Manage system alerts</p>
+              </div>
             </div>
-
-            {/* Content Area */}
-            <div className="flex-1">
-              {activeTab === "profile" && (
-                <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20">
-                  <h2 className="text-lg font-semibold text-on-surface mb-6 font-headline">
-                    Profile Information
-                  </h2>
-
-                  <div className="flex items-start gap-6 mb-8">
-                    <div className="w-20 h-20 rounded-full bg-primary-container flex items-center justify-center text-white text-2xl font-bold">
-                      RK
-                    </div>
-                    <div>
-                      <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors">
-                        Change Photo
-                      </button>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        JPG, PNG or GIF. Max size 2MB.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-on-surface">First Name</label>
-                      <input
-                        type="text"
-                        defaultValue="Rahul"
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-on-surface">Last Name</label>
-                      <input
-                        type="text"
-                        defaultValue="Kumar"
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-on-surface">Email</label>
-                      <input
-                        type="email"
-                        defaultValue="rahul.kumar@intellicredit.ai"
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-on-surface">Role</label>
-                      <input
-                        type="text"
-                        defaultValue="Credit Analyst"
-                        disabled
-                        className="w-full px-4 py-3 bg-surface-container-high border border-outline-variant/30 rounded-xl text-muted-foreground cursor-not-allowed"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end mt-6">
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors">
-                      <Save className="w-4 h-4" />
-                      Save Changes
-                    </button>
-                  </div>
+            <div className="space-y-6">
+              <div className="flex items-center justify-between group">
+                <div>
+                  <p className="text-sm font-medium text-[#1a1a1a] dark:text-[#dae2fd]">High Risk Alerts</p>
+                  <p className="text-xs text-[#737373] dark:text-[#86948c] mt-0.5">Push notifications for severe anomalies</p>
                 </div>
-              )}
-
-              {activeTab === "notifications" && (
-                <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20">
-                  <h2 className="text-lg font-semibold text-on-surface mb-6 font-headline">
-                    Notification Preferences
-                  </h2>
-
-                  <div className="space-y-6">
-                    {[
-                      { label: "Email Notifications", desc: "Receive email updates for important alerts", icon: Mail },
-                      { label: "High Risk Alerts", desc: "Get notified when high-risk applications are detected", icon: Bell },
-                      { label: "Weekly Reports", desc: "Receive weekly summary of all applications", icon: Database },
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl">
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <item.icon className="w-5 h-5 text-primary" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-on-surface">{item.label}</p>
-                            <p className="text-sm text-muted-foreground">{item.desc}</p>
-                          </div>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" defaultChecked className="sr-only peer" />
-                          <div className="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:bg-primary peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" />
-                        </label>
-                      </div>
-                    ))}
-                  </div>
+                <input
+                  type="checkbox"
+                  checked={highRiskAlerts}
+                  onChange={(e) => setHighRiskAlerts(e.target.checked)}
+                  className="w-5 h-5 text-[#50ddad] rounded bg-[#060e20] border-[#1e293b] focus:ring-[#50ddad]/30 accent-[#50ddad] cursor-pointer"
+                />
+              </div>
+              <div className="flex items-center justify-between group">
+                <div>
+                  <p className="text-sm font-medium text-[#1a1a1a] dark:text-[#dae2fd]">Analysis Complete</p>
+                  <p className="text-xs text-[#737373] dark:text-[#86948c] mt-0.5">Alerts when AI engines wrap up</p>
                 </div>
-              )}
-
-              {activeTab === "appearance" && (
-                <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20">
-                  <h2 className="text-lg font-semibold text-on-surface mb-6 font-headline">
-                    Appearance Settings
-                  </h2>
-
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                          {isDarkMode ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
-                        </div>
-                        <div>
-                          <p className="font-medium text-on-surface">Dark Mode</p>
-                          <p className="text-sm text-muted-foreground">Switch between light and dark theme</p>
-                        </div>
-                      </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={isDarkMode}
-                          onChange={() => {
-                            setIsDarkMode(!isDarkMode);
-                            document.documentElement.classList.toggle("dark");
-                          }}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-surface-container-high rounded-full peer peer-checked:bg-primary peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all" />
-                      </label>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-surface-container-low rounded-xl">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <Globe className="w-5 h-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-on-surface">Language</p>
-                          <p className="text-sm text-muted-foreground">Select your preferred language</p>
-                        </div>
-                      </div>
-                      <select className="px-4 py-2 bg-surface-container-lowest border border-outline-variant/30 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20">
-                        <option>English</option>
-                        <option>Hindi</option>
-                      </select>
-                    </div>
-                  </div>
+                <input
+                  type="checkbox"
+                  checked={analysisComplete}
+                  onChange={(e) => setAnalysisComplete(e.target.checked)}
+                  className="w-5 h-5 text-[#50ddad] rounded bg-[#060e20] border-[#1e293b] focus:ring-[#50ddad]/30 accent-[#50ddad] cursor-pointer"
+                />
+              </div>
+              <div className="flex items-center justify-between group">
+                <div>
+                  <p className="text-sm font-medium text-[#1a1a1a] dark:text-[#dae2fd]">Weekly Digest</p>
+                  <p className="text-xs text-[#737373] dark:text-[#86948c] mt-0.5">Automated portfolio summary emails</p>
                 </div>
-              )}
+                <input
+                  type="checkbox"
+                  checked={weeklyReports}
+                  onChange={(e) => setWeeklyReports(e.target.checked)}
+                  className="w-5 h-5 text-[#50ddad] rounded bg-[#060e20] border-[#1e293b] focus:ring-[#50ddad]/30 accent-[#50ddad] cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
 
-              {activeTab === "security" && (
-                <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20">
-                  <h2 className="text-lg font-semibold text-on-surface mb-6 font-headline">
-                    Security Settings
-                  </h2>
+          {/* Security */}
+          <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-[20px] shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] p-6">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#e5e5e5] dark:border-white/[0.06]">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#fee2e2] to-[#fecaca] dark:from-[#ef4444]/20 dark:to-[#dc2626]/10 rounded-xl flex items-center justify-center border border-transparent dark:border-[#ef4444]/20">
+                 <Lock className="w-5 h-5 text-[#ef4444] dark:text-[#f87171]" />
+              </div>
+              <div>
+                 <h3 className="text-lg font-semibold text-[#1a1a1a] dark:text-[#dae2fd]">Security & Access</h3>
+                 <p className="text-xs text-[#737373] dark:text-[#86948c]">Active session control</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              <button className="w-full px-5 py-3.5 bg-[#f5f5f5] dark:bg-[#060e20] text-[#1a1a1a] dark:text-[#dae2fd] border border-[#e5e5e5] dark:border-[#1e293b] rounded-xl hover:bg-[#e5f7f3] dark:hover:border-[#50ddad]/50 transition-all text-sm font-medium text-left">
+                Trigger Password Reset Email
+              </button>
+              <button className="w-full px-5 py-3.5 bg-[#f5f5f5] dark:bg-[#060e20] text-[#1a1a1a] dark:text-[#dae2fd] border border-[#e5e5e5] dark:border-[#1e293b] rounded-xl hover:bg-[#e5f7f3] dark:hover:border-[#50ddad]/50 transition-all text-sm font-medium text-left">
+                Enable Hardware Two-Factor (2FA)
+              </button>
+              <button className="w-full px-5 py-3.5 bg-[#f5f5f5] text-[#ef4444] dark:bg-[#ef4444]/10 border border-[#e5e5e5] dark:border-[#ef4444]/30 rounded-xl hover:bg-[#fee2e2] dark:hover:bg-[#ef4444]/20 transition-all text-sm font-bold text-left">
+                Terminate All Other Sessions
+              </button>
+            </div>
+          </div>
 
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-on-surface">Current Password</label>
-                      <input
-                        type="password"
-                        placeholder="Enter current password"
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-on-surface">New Password</label>
-                      <input
-                        type="password"
-                        placeholder="Enter new password"
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-on-surface">Confirm New Password</label>
-                      <input
-                        type="password"
-                        placeholder="Confirm new password"
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end mt-6">
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors">
-                      <Shield className="w-4 h-4" />
-                      Update Password
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {activeTab === "api" && (
-                <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20">
-                  <h2 className="text-lg font-semibold text-on-surface mb-6 font-headline">
-                    API Configuration
-                  </h2>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-on-surface">Supabase URL</label>
-                      <input
-                        type="text"
-                        placeholder="https://your-project.supabase.co"
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono text-sm"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-on-surface">Supabase Anon Key</label>
-                      <input
-                        type="password"
-                        placeholder="Enter your Supabase anon key"
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono text-sm"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-on-surface">OpenAI API Key</label>
-                      <input
-                        type="password"
-                        placeholder="sk-..."
-                        className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end mt-6">
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors">
-                      <Save className="w-4 h-4" />
-                      Save API Keys
-                    </button>
-                  </div>
-                </div>
-              )}
+          {/* Appearance */}
+          <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-[20px] shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] p-6">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#e5e5e5] dark:border-white/[0.06]">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#fef3c7] to-[#fde68a] dark:from-[#f59e0b]/20 dark:to-[#d97706]/10 rounded-xl flex items-center justify-center border border-transparent dark:border-[#f59e0b]/20">
+                 <Palette className="w-5 h-5 text-[#f59e0b] dark:text-[#fbbf24]" />
+              </div>
+              <div>
+                 <h3 className="text-lg font-semibold text-[#1a1a1a] dark:text-[#dae2fd]">User Interface</h3>
+                 <p className="text-xs text-[#737373] dark:text-[#86948c]">Platform styling</p>
+              </div>
+            </div>
+            <div className="space-y-6">
+              <div>
+                <label className="text-xs font-semibold text-[#86948c] uppercase tracking-wider">Engine Theme</label>
+                <p className="text-xs text-[#737373] dark:text-[#86948c] mb-2 mt-1">
+                  You can seamlessly toggle this from the top navigation bar.
+                </p>
+                <select className="w-full px-4 py-3 bg-[#f5f5f5] dark:bg-[#060e20] border border-[#e5e5e5] dark:border-[#1e293b] rounded-xl text-[#1a1a1a] dark:text-[#dae2fd] text-sm focus:outline-none focus:ring-2 focus:ring-[#50ddad]/30">
+                  <option>Sovereign Dark Mode (Default)</option>
+                  <option>System Sync</option>
+                  <option>Light Mode</option>
+                </select>
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Save Bar */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white dark:bg-[#0b1326] rounded-[20px] shadow-[0_0_40px_rgba(80,221,173,0.1)] border border-[#e5e5e5] dark:border-[#50ddad]/20 p-6 flex flex-col md:flex-row items-center justify-between gap-4 mt-8"
+        >
+          <div>
+            <h3 className="text-lg font-bold text-[#1a1a1a] dark:text-[#dae2fd]">Confirm Configuration</h3>
+            <p className="text-sm text-[#737373] dark:text-[#86948c] mt-1">
+              Save your Sovereign Intelligence platform preferences.
+            </p>
+          </div>
+          <button
+            onClick={handleSave}
+            disabled={saved}
+            className={`px-8 py-3.5 rounded-xl font-bold shadow-lg transition-all flex items-center gap-2 ${
+              saved
+                ? "bg-[#10b981] text-white shadow-[#10b981]/20 cursor-not-allowed"
+                : "bg-gradient-to-r from-[#50ddad] to-[#00b386] text-[#003828] hover:shadow-[0_8px_30px_rgba(0,179,134,0.3)] hover:scale-[1.02]"
+            }`}
+          >
+            {saved ? (
+              <>
+                <Check className="w-5 h-5 border-2 border-white rounded-full p-0.5" />
+                Preferences Cached
+              </>
+            ) : (
+              "Save Active Changes"
+            )}
+          </button>
+        </motion.div>
       </div>
     </Layout>
   );

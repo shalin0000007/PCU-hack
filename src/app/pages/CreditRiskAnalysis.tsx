@@ -12,6 +12,7 @@ import {
   Target,
   Brain,
   ExternalLink,
+  Sparkles,
 } from "lucide-react";
 import Layout from "../components/Layout";
 import AIChatbot from "../components/AIChatbot";
@@ -37,10 +38,10 @@ import {
 } from "recharts";
 
 const riskBreakdownStatic = [
-  { name: "Financial Risk", value: 35, color: "#f59e0b" },
+  { name: "Financial Risk", value: 35, color: "#fbbf24" },
   { name: "Fraud Indicators", value: 25, color: "#ef4444" },
   { name: "External Factors", value: 15, color: "#3b82f6" },
-  { name: "Normal", value: 25, color: "#10b981" },
+  { name: "Normal", value: 25, color: "#50ddad" },
 ];
 
 const gstVsBankDataFallback = [
@@ -145,7 +146,7 @@ export default function CreditRiskAnalysis() {
       setReportData({
         application: {
           loan_amount: 5000000,
-          companies: { name: companyFallback }
+          companies: { name: companyFallback, industry: "Technology" }
         },
         report: {
           created_at: new Date().toISOString(),
@@ -176,11 +177,11 @@ export default function CreditRiskAnalysis() {
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
       case "positive":
-        return "bg-[#d1fae5] text-[#10b981] dark:bg-[#065f46] dark:text-[#86efac]";
+        return "bg-[#d1fae5] text-[#10b981] dark:bg-[#00b386]/10 dark:text-[#50ddad] border border-transparent dark:border-[#00b386]/20";
       case "negative":
-        return "bg-[#fee2e2] text-[#ef4444] dark:bg-[#7f1d1d] dark:text-[#fca5a5]";
+        return "bg-[#fee2e2] text-[#ef4444] dark:bg-[#ef4444]/10 dark:text-[#f87171] border border-transparent dark:border-[#ef4444]/20";
       default:
-        return "bg-[#e0e7ff] text-[#6366f1] dark:bg-[#312e81] dark:text-[#a5b4fc]";
+        return "bg-[#e0e7ff] text-[#6366f1] dark:bg-[#3b82f6]/10 dark:text-[#60a5fa] border border-transparent dark:border-[#3b82f6]/20";
     }
   };
 
@@ -188,7 +189,10 @@ export default function CreditRiskAnalysis() {
     return (
       <Layout>
         <div className="p-6 flex items-center justify-center min-h-[50vh]">
-          <p className="text-[#737373] dark:text-white text-lg">Loading comprehensive AI report...</p>
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-12 h-12 border-4 border-[#00b386]/20 border-t-[#00b386] rounded-full animate-spin"></div>
+            <p className="text-[#1a1a1a] dark:text-[#dae2fd] text-lg font-medium">Synthesizing AI Report...</p>
+          </div>
         </div>
       </Layout>
     );
@@ -197,14 +201,15 @@ export default function CreditRiskAnalysis() {
   if (!reportData || !reportData.report) {
     return (
       <Layout>
-        <div className="p-6 space-y-4">
-            <h2 className="text-xl text-[#ef4444]">Analysis Not Found</h2>
-            <p className="text-[#a3a3a3]">Could not fetch analysis report for Application ID {id}. Please ensure it was generated first.</p>
+        <div className="p-6 max-w-2xl mx-auto mt-12 bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-2xl shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] text-center p-12">
+            <AlertTriangle className="w-12 h-12 text-[#ef4444] mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-[#1a1a1a] dark:text-[#dae2fd] mb-2">Analysis Not Found</h2>
+            <p className="text-[#737373] dark:text-[#86948c] mb-6">Could not fetch analysis report for Application ID {id}. Please ensure it was generated first.</p>
             <button
               onClick={() => navigate("/dashboard")}
-              className="px-4 py-2 bg-white dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] text-[#1a1a1a] dark:text-white rounded-xl"
+              className="px-6 py-3 bg-gradient-to-r from-[#50ddad] to-[#00b386] text-[#003828] font-bold rounded-xl shadow-[0_4px_14px_rgba(0,179,134,0.3)] hover:shadow-[0_6px_20px_rgba(0,179,134,0.4)] transition-all"
             >
-              Back to Dashboard
+              Return to Dashboard
             </button>
         </div>
       </Layout>
@@ -213,6 +218,7 @@ export default function CreditRiskAnalysis() {
 
   const { application, report } = reportData;
   const companyName = application?.companies?.name || "Unknown Company";
+  const industry = application?.companies?.industry || "Technology";
   
   const riskScore = aiAssessment?.score ?? report?.risk_score ?? 56;
   const riskLevel = aiAssessment?.risk_level ?? report?.risk_level ?? "medium";
@@ -256,335 +262,294 @@ export default function CreditRiskAnalysis() {
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
         <AIChatbot />
 
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8 mt-2">
+          <div className="flex items-start gap-5">
             <button
               onClick={() => navigate("/dashboard")}
-              className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-[#334155] rounded-xl transition-colors border border-[#e5e5e5] dark:border-[#334155]"
+              className="w-11 h-11 flex items-center justify-center bg-white dark:bg-white/5 border border-[#e5e5e5] dark:border-white/[0.06] rounded-xl hover:bg-[#f5f5f5] dark:hover:bg-white/10 transition-colors backdrop-blur-md shrink-0"
             >
-              <ArrowLeft className="w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
+              <ArrowLeft className="w-5 h-5 text-[#737373] dark:text-[#86948c]" />
             </button>
             <div>
-              <h1 className="text-2xl text-[#1a1a1a] dark:text-white">Credit Risk Analysis Report</h1>
-              <p className="text-sm text-[#737373] dark:text-[#94a3b8] mt-1">Application ID: {id}</p>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#1a1a1a] to-[#737373] dark:from-[#dae2fd] dark:to-[#86948c]">{companyName}</h1>
+                <span className="px-2.5 py-1 rounded bg-[#e5f7f3] dark:bg-[#00b386]/10 text-[#00b386] dark:text-[#50ddad] text-[10px] font-bold uppercase tracking-widest border border-transparent dark:border-[#00b386]/20">
+                  {industry}
+                </span>
+              </div>
+              <p className="text-sm font-medium text-[#737373] dark:text-[#86948c] uppercase tracking-wider">{id} • Credit Risk Analysis Report</p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => navigate(`/report/${id}`)}
-              className="px-4 py-2 text-[#00b386] hover:bg-[#e5f7f3] dark:hover:bg-[#0f766e]/20 rounded-xl transition-colors flex items-center gap-2"
+              className="px-5 py-2.5 bg-transparent border border-[#00b386] dark:border-[#50ddad]/30 text-[#00b386] dark:text-[#50ddad] font-bold rounded-xl hover:bg-[#00b386]/10 transition-all flex items-center gap-2 text-sm backdrop-blur-md"
             >
               <FileText className="w-4 h-4" />
               View Report
             </button>
-            <button className="px-4 py-2 bg-gradient-to-r from-[#00b386] to-[#059669] text-white rounded-xl hover:shadow-lg transition-all flex items-center gap-2">
+            <button 
+              onClick={() => {
+                window.open(`http://localhost:8000/api/report/${id}/pdf`, '_blank');
+              }}
+              className="px-6 py-2.5 bg-gradient-to-r from-[#50ddad] to-[#00b386] text-[#003828] font-bold rounded-xl shadow-[0_4px_14px_rgba(0,179,134,0.3)] hover:shadow-[0_6px_20px_rgba(0,179,134,0.4)] transition-all flex items-center gap-2 text-sm"
+            >
               <Download className="w-4 h-4" />
-              Download
+              Download PDF
             </button>
           </div>
         </div>
 
-        {/* Overall Risk Score */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-[24px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-[#737373] dark:text-[#94a3b8] mb-2">Overall Risk Score</p>
-              <div className="flex items-end gap-3">
-                <h2 className="text-5xl text-[#1a1a1a] dark:text-white">{riskScore}</h2>
-                <span className="text-2xl text-[#f59e0b] mb-1">/ 100</span>
+        {/* Score & AI Summary Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Risk Score Hero Card */}
+          <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-3xl shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] p-8 flex flex-col items-center justify-center relative overflow-hidden">
+            {/* Background Glow */}
+            <div className={`absolute inset-0 opacity-20 blur-[80px] pointer-events-none ${riskLevel === 'high' ? 'bg-[#ef4444]' : riskLevel === 'medium' ? 'bg-[#f59e0b]' : 'bg-[#50ddad]'}`}></div>
+            
+            <div className="relative z-10 text-center">
+              <div className="w-48 h-48 mx-auto mb-6 relative flex items-center justify-center">
+                {/* Score Ring */}
+                <svg className="absolute inset-0 w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="45" fill="none" strokeWidth="8" className="stroke-[#f5f5f5] dark:stroke-white/5" />
+                  <circle 
+                    cx="50" cy="50" r="45" fill="none" strokeWidth="8" strokeLinecap="round"
+                    className={`${riskLevel === 'high' ? 'stroke-[#ef4444]' : riskLevel === 'medium' ? 'stroke-[#f59e0b]' : 'stroke-[#50ddad]'}`}
+                    strokeDasharray={`${riskScore * 2.82} 282`}
+                    style={{ transition: 'stroke-dasharray 1.5s ease-out' }}
+                  />
+                </svg>
+                <div className="flex flex-col items-center">
+                  <span className="text-6xl font-black text-[#1a1a1a] dark:text-[#dae2fd] tabular-nums tracking-tighter">{riskScore}</span>
+                  <span className="text-xs font-bold text-[#737373] dark:text-[#86948c] uppercase tracking-widest mt-1">/ 100</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 mt-3">
-                <span className={`px-4 py-1 rounded-full text-sm ${riskLevel === 'high' ? 'bg-[#fee2e2] text-[#ef4444] dark:bg-[#7f1d1d]/40 dark:text-[#fca5a5]' : riskLevel === 'medium' ? 'bg-[#fef3c7] text-[#f59e0b] dark:bg-[#78350f]/40 dark:text-[#fcd34d]' : 'bg-[#d1fae5] text-[#10b981] dark:bg-[#065f46]/40 dark:text-[#6ee7b7]'}`}>
-                  {riskLevel.toUpperCase()} Risk
-                </span>
-                {riskScore < 50 ? (
-                  <TrendingDown className="w-5 h-5 text-[#ef4444]" />
-                ) : (
-                  <TrendingUp className="w-5 h-5 text-[#10b981]" />
-                )}
-              </div>
-            </div>
-            <div className="text-right space-y-2">
-              <div>
-                <p className="text-xs text-[#737373] dark:text-[#94a3b8]">Company</p>
-                <p className="text-sm text-[#1a1a1a] dark:text-white">{companyName}</p>
-              </div>
-              <div>
-                <p className="text-xs text-[#737373] dark:text-[#94a3b8]">Loan Amount</p>
-                <p className="text-sm text-[#1a1a1a] dark:text-white">₹{application?.loan_amount?.toLocaleString()}</p>
-              </div>
-              <div>
-                <p className="text-xs text-[#737373] dark:text-[#94a3b8]">Analysis Date</p>
-                <p className="text-sm text-[#1a1a1a] dark:text-white">{new Date(report.created_at).toLocaleDateString()}</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* AI Summary Card */}
-        <div className="bg-gradient-to-br from-[#00b386] to-[#059669] dark:from-[#0f766e] dark:to-[#065f46] rounded-[24px] shadow-lg p-8 text-white">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center flex-shrink-0">
-              <Brain className="w-6 h-6" />
-            </div>
-            <div className="space-y-3">
-              <h3 className="text-xl">AI Risk Assessment Summary</h3>
-              <p className="text-base opacity-95 leading-relaxed">
-                {aiExplanation}
+              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold tracking-widest uppercase border mb-3 ${riskLevel === 'high' ? 'bg-[#fee2e2] text-[#ef4444] dark:bg-[#ef4444]/10 dark:text-[#f87171] border-transparent dark:border-[#ef4444]/20' : riskLevel === 'medium' ? 'bg-[#fef3c7] text-[#f59e0b] dark:bg-[#f59e0b]/10 dark:text-[#fbbf24] border-transparent dark:border-[#f59e0b]/20' : 'bg-[#d1fae5] text-[#10b981] dark:bg-[#00b386]/10 dark:text-[#50ddad] border-transparent dark:border-[#00b386]/20'}`}>
+                {riskLevel} RISK
+              </div>
+              <p className="text-xs font-semibold text-[#737373] dark:text-[#86948c] uppercase tracking-widest">
+                AI Confidence Index: {confidenceLevel}%
               </p>
-              <div className="flex gap-3 pt-2">
-                <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl">
-                  <p className="text-xs opacity-75">Confidence</p>
-                  <p className="text-lg">{confidenceLevel}%</p>
-                </div>
-                <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl">
-                  <p className="text-xs opacity-75">Risk Factors</p>
-                  <p className="text-lg">{keyFindings.length} Identified</p>
-                </div>
-                <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl">
-                  <p className="text-xs opacity-75">Manual Review</p>
-                  <p className="text-lg">{aiAssessment?.manual_review ? "Recommended" : "Not Required"}</p>
-                </div>
+            </div>
+          </div>
+
+          {/* AI Assessment Card */}
+          <div className="lg:col-span-2 bg-gradient-to-br from-[#00b386]/10 to-[#059669]/5 dark:from-[#50ddad]/10 dark:to-transparent rounded-3xl shadow-lg border border-transparent dark:border-[#50ddad]/20 p-8 backdrop-blur-2xl relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-[#50ddad]/10 rounded-full blur-[80px] pointer-events-none"></div>
+            
+            <div className="flex items-center gap-3 mb-6 relative z-10">
+              <Sparkles className="w-6 h-6 text-[#00b386] dark:text-[#50ddad]" />
+              <h3 className="text-xl font-bold text-[#1a1a1a] dark:text-[#dae2fd]">AI Risk Assessment Summary</h3>
+            </div>
+            
+            <p className="text-[15px] text-[#1a1a1a] dark:text-[#dae2fd] leading-relaxed mb-8 relative z-10 font-medium opacity-90">
+              {aiExplanation}
+            </p>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10">
+              <div className="p-4 bg-white/50 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/5">
+                 <p className="text-[10px] font-bold text-[#737373] dark:text-[#86948c] uppercase tracking-widest mb-1">Recommended Loan</p>
+                 <p className="text-xl font-bold text-[#1a1a1a] dark:text-[#dae2fd]">₹{(report.recommended_amount/100000).toFixed(1)} L</p>
+              </div>
+              <div className="p-4 bg-white/50 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/5">
+                 <p className="text-[10px] font-bold text-[#737373] dark:text-[#86948c] uppercase tracking-widest mb-1">Risk Factors</p>
+                 <p className="text-xl font-bold text-[#1a1a1a] dark:text-[#dae2fd]">{keyFindings.length} Identified</p>
+              </div>
+              <div className="p-4 bg-white/50 dark:bg-black/20 backdrop-blur-md rounded-2xl border border-white/20 dark:border-white/5">
+                 <p className="text-[10px] font-bold text-[#737373] dark:text-[#86948c] uppercase tracking-widest mb-1">Manual Review</p>
+                 <p className="text-xl font-bold text-[#1a1a1a] dark:text-[#dae2fd]">
+                   {aiAssessment?.manual_review ? (
+                     <span className="text-[#f59e0b] dark:text-[#fbbf24]">Required</span>
+                   ) : (
+                     <span className="text-[#00b386] dark:text-[#50ddad]">Not Required</span>
+                   )}
+                 </p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Key Findings */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-[24px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-4">
-          <h3 className="text-lg text-[#1a1a1a] dark:text-white">Key Findings</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {keyFindings.map((finding: any, i: number) => (
-              <div key={i} className="flex gap-3 p-4 bg-[#fef3c7] dark:bg-[#78350f]/20 rounded-xl border border-[#f59e0b]/20">
-                <AlertTriangle className="w-5 h-5 text-[#f59e0b] flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm text-[#1a1a1a] dark:text-white">{finding.title}</p>
-                  <p className="text-xs text-[#737373] dark:text-[#94a3b8] mt-1">
-                    {finding.description}
-                  </p>
+        {/* Key Analysis Findings */}
+        <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-2xl shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] p-8 space-y-6">
+          <h3 className="text-lg font-bold text-[#1a1a1a] dark:text-[#dae2fd]">Key Analytical Findings</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {keyFindings.map((finding: any, i: number) => {
+              const severityColor = i === 0 ? "border-l-[#ef4444]" : i === 1 ? "border-l-[#f59e0b]" : "border-l-[#00b386] dark:border-l-[#50ddad]";
+              return (
+                <div key={i} className={`p-5 bg-white/50 dark:bg-black/20 rounded-xl border-l-[3px] border-y border-r border-[#e5e5e5] dark:border-black/5 ${severityColor} backdrop-blur-sm relative overflow-hidden group`}>
+                  <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-10 transition-opacity">
+                    <Target className="w-12 h-12 text-[#1a1a1a] dark:text-white" />
+                  </div>
+                  <h4 className="text-sm font-bold text-[#1a1a1a] dark:text-[#dae2fd] mb-2 pr-4">{finding.title}</h4>
+                  <p className="text-xs text-[#737373] dark:text-[#86948c] leading-relaxed relative z-10">{finding.description}</p>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {keyFindings.length === 0 && (
-                <div className="flex gap-3 p-4 bg-[#d1fae5] dark:bg-[#065f46]/20 rounded-xl border border-[#10b981]/20">
-                    <CheckCircle className="w-5 h-5 text-[#10b981] flex-shrink-0 mt-0.5" />
+                <div className="p-5 bg-white/50 dark:bg-[#00b386]/5 rounded-xl border-l-[3px] border-l-[#00b386] dark:border-l-[#50ddad] border-y border-r dark:border-[#00b386]/10 flex items-center gap-4">
+                    <CheckCircle className="w-8 h-8 text-[#00b386] dark:text-[#50ddad]" />
                     <div>
-                        <p className="text-sm text-[#1a1a1a] dark:text-white">Clean Profile</p>
-                        <p className="text-xs text-[#737373] dark:text-[#94a3b8] mt-1">No significant risk flags were raised by the AI.</p>
+                        <p className="text-sm font-bold text-[#1a1a1a] dark:text-[#dae2fd]">Clean Profile</p>
+                        <p className="text-xs text-[#737373] dark:text-[#86948c] mt-1">No significant risk flags were raised by the AI.</p>
                     </div>
                 </div>
             )}
           </div>
         </div>
 
-        {/* Charts Section Header */}
-        <div className="flex items-center justify-between mt-8 mb-4">
-          <h2 className="text-xl text-[#1a1a1a] dark:text-white font-medium">Financial Analysis</h2>
-          <select 
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-            className="px-4 py-2 bg-white dark:bg-[#1e293b] border border-[#e5e5e5] dark:border-[#334155] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white shadow-sm"
-          >
-            {availableYears.map(year => (
-              <option key={String(year)} value={String(year)}>{String(year)}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* Financial Summary Pills */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-[24px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-6">
-          <h3 className="text-lg text-[#1a1a1a] dark:text-white">Financial Summary {selectedYear !== "All Time" && `(${selectedYear})`}</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 bg-[#d1fae5] dark:bg-[#065f46]/30 rounded-[20px] text-center flex flex-col items-center justify-center border border-[#10b981]/20">
-              <p className="text-sm text-[#10b981] dark:text-[#6ee7b7] font-medium mb-1">GST Revenue</p>
-              <p className="text-3xl text-[#1a1a1a] dark:text-white font-semibold">{formatCurrency(totalGst)}</p>
-            </div>
-            <div className="p-6 bg-[#dbeafe] dark:bg-[#1e3a8a]/30 rounded-[20px] text-center flex flex-col items-center justify-center border border-[#3b82f6]/20">
-              <p className="text-sm text-[#3b82f6] dark:text-[#93c5fd] font-medium mb-1">Bank Credits</p>
-              <p className="text-3xl text-[#1a1a1a] dark:text-white font-semibold">{formatCurrency(totalBank)}</p>
-            </div>
-            <div className={`p-6 rounded-[20px] text-center flex flex-col items-center justify-center border ${totalGst > totalBank ? 'bg-[#fee2e2] dark:bg-[#7f1d1d]/30 border-[#ef4444]/20' : 'bg-[#fef3c7] dark:bg-[#78350f]/30 border-[#f59e0b]/20'}`}>
-              <p className={`text-sm font-medium mb-1 ${totalGst > totalBank ? 'text-[#ef4444] dark:text-[#fca5a5]' : 'text-[#f59e0b] dark:text-[#fcd34d]'}`}>Difference</p>
-              <p className="text-3xl text-[#1a1a1a] dark:text-white font-semibold">{formatCurrency(difference)}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Charts Row */}
+        {/* Financial Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* GST vs Bank Revenue */}
-          <div className="bg-white dark:bg-[#1e293b] rounded-[24px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-6">
-            <h3 className="text-lg text-[#1a1a1a] dark:text-white">GST vs Bank Revenue Trend</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={filteredGstBankData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" className="dark:stroke-[#334155]" />
-                <XAxis dataKey="displayMonth" stroke="#737373" className="dark:stroke-[#94a3b8]" />
-                <YAxis stroke="#737373" className="dark:stroke-[#94a3b8]" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1e293b",
-                    border: "1px solid #334155",
-                    borderRadius: "12px",
-                  }}
-                />
-                <Legend />
-                <Line type="monotone" dataKey="gst" stroke="#00b386" strokeWidth={3} name="GST Revenue" />
-                <Line type="monotone" dataKey="bank" stroke="#3b82f6" strokeWidth={3} name="Bank Credits" />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-2xl shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] p-8">
+            <div className="flex items-center justify-between mb-6">
+               <h3 className="text-lg font-bold text-[#1a1a1a] dark:text-[#dae2fd]">GST vs Bank Revenue</h3>
+               <select 
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  className="px-3 py-1.5 bg-[#f5f5f5] dark:bg-[#060e20] border border-[#e5e5e5] dark:border-[#1e293b] rounded-lg text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-[#50ddad]/30 text-[#1a1a1a] dark:text-[#dae2fd]"
+                >
+                  {availableYears.map(year => (
+                    <option key={String(year)} value={String(year)}>{String(year)}</option>
+                  ))}
+               </select>
+            </div>
+            
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={filteredGstBankData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorGst" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#50ddad" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#50ddad" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorBank" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e5e5" className="dark:stroke-white/5" />
+                  <XAxis dataKey="displayMonth" stroke="#737373" className="dark:stroke-[#86948c]" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} dy={10} />
+                  <YAxis stroke="#737373" className="dark:stroke-[#86948c]" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} tickFormatter={(value) => `₹${value/100000}L`} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#0b1326", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", color: '#dae2fd' }}
+                    itemStyle={{ fontWeight: 600 }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                  <Line type="monotone" dataKey="gst" stroke="#50ddad" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#0b1326', stroke: '#50ddad', strokeWidth: 3 }} name="GST Returns" 
+                      // @ts-ignore
+                      fill="url(#colorGst)"
+                  />
+                  <Line type="monotone" dataKey="bank" stroke="#3b82f6" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#0b1326', stroke: '#3b82f6', strokeWidth: 3 }} name="Bank Credits"
+                      // @ts-ignore
+                      fill="url(#colorBank)"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4 mt-6 pt-6 border-t border-[#e5e5e5] dark:border-white/[0.06]">
+               <div>
+                  <p className="text-[10px] font-bold text-[#737373] dark:text-[#86948c] uppercase tracking-widest mb-1">Total GST</p>
+                  <p className="text-lg font-bold text-[#1a1a1a] dark:text-[#dae2fd]">{formatCurrency(totalGst)}</p>
+               </div>
+               <div>
+                 <p className="text-[10px] font-bold text-[#737373] dark:text-[#86948c] uppercase tracking-widest mb-1">Variance</p>
+                 <p className={`text-lg font-bold ${totalGst !== totalBank ? 'text-[#ef4444] dark:text-[#f87171]' : 'text-[#00b386] dark:text-[#50ddad]'}`}>
+                    {Math.abs(100 - (totalBank/totalGst)*100).toFixed(1)}% Mismatch
+                 </p>
+               </div>
+            </div>
           </div>
 
           {/* Cash Flow Analysis */}
-          <div className="bg-white dark:bg-[#1e293b] rounded-[24px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-6">
-            <h3 className="text-lg text-[#1a1a1a] dark:text-white">Cash Flow Analysis</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={cashFlowData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" className="dark:stroke-[#334155]" />
-                <XAxis dataKey="quarter" stroke="#737373" className="dark:stroke-[#94a3b8]" />
-                <YAxis stroke="#737373" className="dark:stroke-[#94a3b8]" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "#1e293b",
-                    border: "1px solid #334155",
-                    borderRadius: "12px",
-                  }}
-                />
-                <Legend />
-                <Bar dataKey="inflow" fill="#10b981" name="Inflow" radius={[8, 8, 0, 0]} />
-                <Bar dataKey="outflow" fill="#ef4444" name="Outflow" radius={[8, 8, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Industry Insights */}
-        <div className="bg-white dark:bg-[#1e293b] rounded-[24px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-6">
-          <div className="flex items-center gap-3">
-            <Target className="w-6 h-6 text-[#00b386]" />
-            <h3 className="text-lg text-[#1a1a1a] dark:text-white">Peer Comparison</h3>
-          </div>
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart data={industryInsights}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" className="dark:stroke-[#334155]" />
-              <XAxis dataKey="category" stroke="#737373" className="dark:stroke-[#94a3b8]" />
-              <YAxis stroke="#737373" className="dark:stroke-[#94a3b8]" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "#1e293b",
-                  border: "1px solid #334155",
-                  borderRadius: "12px",
-                }}
-              />
-              <Legend />
-              <Bar dataKey="company" fill="#00b386" name="Company" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="industry" fill="#3b82f6" name="Industry Avg" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* News & Risk Breakdown */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* News Section */}
-          <div className="lg:col-span-2 bg-white dark:bg-[#1e293b] rounded-[24px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-6">
-            <div className="flex items-center gap-3">
-              <Newspaper className="w-6 h-6 text-[#00b386]" />
-              <h3 className="text-lg text-[#1a1a1a] dark:text-white">Recent News & Market Intelligence</h3>
+          <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-2xl shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] p-8">
+            <h3 className="text-lg font-bold text-[#1a1a1a] dark:text-[#dae2fd] mb-6">Cash Flow Analysis</h3>
+            <div className="h-[280px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={cashFlowData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e5e5" className="dark:stroke-white/5" />
+                  <XAxis dataKey="quarter" stroke="#737373" className="dark:stroke-[#86948c]" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} dy={10} />
+                  <YAxis stroke="#737373" className="dark:stroke-[#86948c]" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} tickFormatter={(value) => `₹${value/100000}L`} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: "#0b1326", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px", color: '#dae2fd' }}
+                    itemStyle={{ fontWeight: 600 }}
+                    cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                  <Bar dataKey="inflow" fill="#50ddad" name="Inflow" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  <Bar dataKey="outflow" fill="#3b82f6" name="Outflow" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
-            <div className="space-y-4">
-              {newsList.map((news: any) => (
-                <div
-                  key={news.id}
-                  className="p-4 border border-[#e5e5e5] dark:border-[#334155] rounded-xl hover:shadow-md transition-all group cursor-pointer"
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <h4 className="text-sm text-[#1a1a1a] dark:text-white group-hover:text-[#00b386] transition-colors">
-                        {news.title}
-                      </h4>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-[#737373] dark:text-[#94a3b8]">{news.source}</span>
-                        <span className="text-xs text-[#737373] dark:text-[#94a3b8]">•</span>
-                        <span className="text-xs text-[#737373] dark:text-[#94a3b8]">{news.date}</span>
-                      </div>
+          </div>
+        </div>
+
+        {/* Peer Intelligence & News */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-2xl shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] p-8">
+             <div className="flex items-center gap-3 mb-6">
+               <Target className="w-5 h-5 text-[#00b386] dark:text-[#50ddad]" />
+               <h3 className="text-lg font-bold text-[#1a1a1a] dark:text-[#dae2fd]">Peer Intelligence</h3>
+             </div>
+             
+             <div className="flex justify-center h-[280px]">
+               <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="70%" data={industryInsights}>
+                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                    <PolarAngleAxis dataKey="category" tick={{ fill: '#86948c', fontSize: 10, fontWeight: 'bold' }} />
+                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                    <Radar name="Company" dataKey="company" stroke="#50ddad" fill="#50ddad" fillOpacity={0.4} strokeWidth={2} />
+                    <Radar name="Industry" dataKey="industry" stroke="#3b82f6" fill="transparent" strokeDasharray="3 3" strokeWidth={2} />
+                    <Legend wrapperStyle={{ fontSize: '12px' }} />
+                    <Tooltip contentStyle={{ backgroundColor: "#0b1326", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "12px" }} />
+                  </RadarChart>
+               </ResponsiveContainer>
+             </div>
+             
+             <div className="mt-4 p-4 bg-white/50 dark:bg-black/20 rounded-xl border border-[#e5e5e5] dark:border-white/[0.03]">
+                 <p className="text-xs text-[#737373] dark:text-[#86948c] leading-relaxed">
+                   Company outperforms industry competitors by 12% in <span className="font-bold text-[#1a1a1a] dark:text-[#dae2fd]">Growth metrics</span> but shows elevated risk in <span className="font-bold text-[#ef4444] dark:text-[#f87171]">Leverage capacity</span>.
+                 </p>
+             </div>
+          </div>
+
+          <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-2xl shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] p-8 flex flex-col">
+             <div className="flex items-center gap-3 mb-6">
+               <Newspaper className="w-5 h-5 text-[#00b386] dark:text-[#50ddad]" />
+               <h3 className="text-lg font-bold text-[#1a1a1a] dark:text-[#dae2fd]">Real-Time Market Intelligence</h3>
+             </div>
+             
+             <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+               {newsList.map((news: any) => (
+                 <div key={news.id} className="p-4 bg-white/50 dark:bg-black/20 border border-[#e5e5e5] dark:border-white/[0.06] rounded-xl group transition-all hover:bg-white dark:hover:bg-white/5">
+                    <div className="flex items-start justify-between mb-2 gap-4">
+                      <h4 className="text-sm font-bold text-[#1a1a1a] dark:text-[#dae2fd] group-hover:text-[#00b386] dark:group-hover:text-[#50ddad] transition-colors leading-tight">{news.title}</h4>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase flex-shrink-0 ${getSentimentColor(news.sentiment)}`}>
+                        {news.sentiment}
+                      </span>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs ${getSentimentColor(news.sentiment)}`}>
-                      {news.sentiment}
-                    </span>
-                  </div>
-                  {(() => {
-                    const aiExplanation = news.summary;
-                    return (
-                      <p className="text-sm text-[#737373] dark:text-[#94a3b8] leading-relaxed">{aiExplanation}</p>
-                    );
-                  })()}
-                  <a href={news.url || "#"} target="_blank" rel="noopener noreferrer" className="inline-flex mt-2 text-xs text-[#00b386] items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    Read more <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Risk Breakdown */}
-          <div className="bg-white dark:bg-[#1e293b] rounded-[24px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-6">
-            <h3 className="text-lg text-[#1a1a1a] dark:text-white">Risk Breakdown</h3>
-            <ResponsiveContainer width="100%" height={220}>
-              <PieChart>
-                <Pie
-                  data={riskBreakdownStatic}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={2}
-                  dataKey="value"
-                >
-                  {riskBreakdownStatic.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="grid grid-cols-2 gap-3">
-              {riskBreakdownStatic.map((item) => (
-                <div key={item.name} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
-                  <div>
-                    <p className="text-xs text-[#737373] dark:text-[#94a3b8]">{item.name}</p>
-                    <p className="text-sm text-[#1a1a1a] dark:text-white">{item.value}%</p>
-                  </div>
-                </div>
-              ))}
-            </div>
+                    <p className="text-xs text-[#737373] dark:text-[#86948c] mb-3 line-clamp-2 leading-relaxed">{news.summary}</p>
+                    <div className="flex items-center justify-between">
+                       <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest text-[#737373] dark:text-[#3c4a43]">
+                         <span>{news.source}</span>
+                         <span>•</span>
+                         <span>{news.date}</span>
+                       </div>
+                    </div>
+                 </div>
+               ))}
+               {newsList.length === 0 && (
+                 <p className="text-center text-sm text-[#737373] dark:text-[#86948c] py-8">No recent market news found.</p>
+               )}
+             </div>
           </div>
         </div>
 
-        {/* Final Decision */}
-        <div className="bg-gradient-to-br from-[#00b386] to-[#059669] dark:from-[#0f766e] dark:to-[#065f46] rounded-[24px] shadow-lg p-8 text-white">
-          <h3 className="text-xl mb-6">Final Decision & Recommendation</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <p className="text-sm opacity-90">Recommended Loan Amount</p>
-              <p className="text-3xl">₹{report.recommended_amount?.toLocaleString()}</p>
-              <p className="text-xs opacity-75">{Math.round((report.recommended_amount / application?.loan_amount) * 100)}% of requested amount</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm opacity-90">Risk Level</p>
-              <p className="text-3xl">{report.risk_level.charAt(0).toUpperCase() + report.risk_level.slice(1)}</p>
-              <p className="text-xs opacity-75">{report.manual_review_required ? "Manual review required" : "Safe to proceed"}</p>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm opacity-90">Confidence Score</p>
-              <p className="text-3xl">{report.confidence_score}%</p>
-              <p className="text-xs opacity-75">High confidence in assessment</p>
-            </div>
-          </div>
-        </div>
       </div>
     </Layout>
   );
