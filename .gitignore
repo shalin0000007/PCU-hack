@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.DS_Store
+*.local
+.env
+.env.*
+
+# Backend and data files
+backend/
+*.csv
+*.py
