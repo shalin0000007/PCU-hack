@@ -13,22 +13,50 @@ router = APIRouter()
 def get_applications():
     if not supabase:
         return []
-    res = supabase.table("applications").select("*, companies(name), analysis_reports(*)").order("created_at", desc=True).execute()
+    res = supabase.table("applications").select("*, companies(name), analysis_reports(*), ai_risk_assessments(*)").order("created_at", desc=True).execute()
     apps = []
     for item in res.data:
         comp_name = item.get("companies", {}).get("name") if item.get("companies") else "Unknown"
         reports = item.get("analysis_reports", [])
         report = reports[0] if reports else {}
         
+        ai_assessments = item.get("ai_risk_assessments", [])
+        ai_data = ai_assessments[0] if ai_assessments else {}
+        
+        risk_score = ai_data.get("score") if ai_data else report.get("risk_score", 0)
+        risk_level = ai_data.get("risk_level") if ai_data else report.get("risk_level", "medium")
+        confidence = ai_data.get("confidence") if ai_data else report.get("confidence_score", 0)
+        
+        flag = report.get("primary_flag")
+        if ai_data and ai_data.get("key_findings"):
+            try:
+                flags = []
+                for f in ai_data["key_findings"]:
+                    if not isinstance(f, dict): continue
+                    if f.get("type") not in ["error", "warning"]: continue
+                    text = f.get("message") or f.get("text") or f.get("description") or f.get("title") or ""
+                    if text:
+                        flags.append(text)
+                if flags:
+                    flag = flags[0]
+            except Exception:
+                pass
+                 
+        status = item["status"]
+        if ai_data:
+             if risk_level.lower() == "high": status = "Flagged"
+             elif risk_level.lower() == "low": status = "Approved"
+             elif risk_level.lower() == "medium": status = "Under Review"
+
         apps.append({
             "id": item["id"],
             "company": comp_name,
             "loanAmount": f"₹{int(item['loan_amount']):,}",
-            "riskScore": report.get("risk_score", 0),
-            "riskLevel": report.get("risk_level", "medium"),
-            "status": item["status"],
-            "confidence": report.get("confidence_score", 0),
-            "flag": report.get("primary_flag"),
+            "riskScore": risk_score,
+            "riskLevel": risk_level,
+            "status": status,
+            "confidence": confidence,
+            "flag": flag,
             "date": item["created_at"].split("T")[0]
         })
     return apps
@@ -174,4 +202,38 @@ def get_ai_assessment(application_id: str):
 def chat_endpoint(req: ChatRequest):
     from app.services.ai_service import chat_with_agent
     response = chat_with_agent(req.message, req.context)
+    return {"reply": response}
+
+@router.post("/chat/{application_id}")
+def chat_with_report(application_id: str, req: ChatRequest):
+    if not supabase: raise HTTPException(status_code=500, detail="Supabase not configured")
+    
+    report_res = supabase.table("analysis_reports").select("*").eq("application_id", application_id).order("created_at", desc=True).limit(1).execute()
+    if not report_res.data:
+        raise HTTPException(status_code=404, detail="Report not found")
+    report_data = report_res.data[0]
+    
+    app_res = supabase.table("applications").select("*, companies(name)").eq("id", application_id).execute()
+    app_data = app_res.data[0] if app_res.data else {}
+    company_name = app_data.get("companies", {}).get("name", "Unknown")
+    
+    ai_res = supabase.table("ai_risk_assessments").select("*").eq("application_id", application_id).execute()
+    ai_data = ai_res.data[0] if ai_res.data else {}
+    
+    context = {
+        "company_name": company_name,
+        "loan_requested": app_data.get("loan_amount"),
+        "risk_score": ai_data.get("score") or report_data.get("risk_score"),
+        "risk_level": ai_data.get("risk_level") or report_data.get("risk_level"),
+        "ai_summary": ai_data.get("summary") or report_data.get("ai_summary"),
+        "key_findings": ai_data.get("key_findings") or report_data.get("key_findings") or [],
+        "news": report_data.get("news_data") or [],
+        "financial_data": report_data.get("chart_data", {})
+    }
+    
+    from app.services.ai_service import chat_with_agent
+    response = chat_with_agent(
+        user_message=f"Answer the following question about {company_name} based on the provided report context: {req.message}", 
+        context=context
+    )
     return {"reply": response}

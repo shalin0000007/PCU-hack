@@ -98,7 +98,7 @@ export default function AIChatbot() {
                       : "bg-[#f5f5f5] text-[#1a1a1a]"
                   }`}
                 >
-                  <p className="text-sm leading-relaxed">{msg.content}</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 </div>
               </div>
             ))}
