@@ -31,3 +31,12 @@ class AnalysisReportResponse(BaseModel):
     key_findings: List[Dict[str, Any]]
     chart_data: Dict[str, Any]
     news_data: List[Dict[str, Any]]
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+class LoginResponse(BaseModel):
+    username: str
+    role: str
+    message: str
