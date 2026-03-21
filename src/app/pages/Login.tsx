@@ -11,10 +11,32 @@ export default function Login() {
     password: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate login
-    navigate("/dashboard");
+    try {
+      const response = await fetch("http://localhost:8000/api/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("userRole", data.role);
+        navigate("/dashboard");
+      } else {
+        const errData = await response.json();
+        alert(errData.detail || "Invalid credentials.");
+      }
+    } catch (error) {
+      console.error("Login failed", error);
+      alert("System could not be reached. Please check the backend connection.")
+    }
   };
 
   return (

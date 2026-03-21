@@ -141,6 +141,14 @@ export default function Dashboard() {
       .catch(err => console.error("Failed to fetch applications:", err));
   }, []);
 
+  const userRole = localStorage.getItem("userRole") || "user";
+  const isAdmin = userRole === "admin";
+  
+  const currentApplications = isAdmin ? appData : [];
+  const currentAlerts = isAdmin ? alerts : [];
+  const currentRiskDistribution = isAdmin ? riskDistribution : [];
+  const currentTrendData = isAdmin ? trendData : [];
+
   const getRiskColor = (level: string) => {
     switch (level) {
       case "low":
@@ -203,7 +211,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="space-y-2 mt-4">
-                  <h2 className="text-4xl">3 High-Risk Cases</h2>
+                  <h2 className="text-4xl">{isAdmin ? "3 High-Risk Cases" : "0 High-Risk Cases"}</h2>
                   <p className="text-base opacity-90">
                     Revenue mismatch detected in 2 companies • AI recommends manual review
                   </p>
@@ -229,7 +237,7 @@ export default function Dashboard() {
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-sm text-[#737373] dark:text-[#94a3b8]">Total Applications</p>
-                <p className="text-3xl text-[#1a1a1a] dark:text-white">247</p>
+                <p className="text-3xl text-[#1a1a1a] dark:text-white">{isAdmin ? "247" : "0"}</p>
                 <p className="text-xs text-[#10b981] flex items-center gap-1">
                   <TrendingUp className="w-3 h-3" />
                   +12% this month
@@ -245,7 +253,7 @@ export default function Dashboard() {
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-sm text-[#737373] dark:text-[#94a3b8]">High Risk Cases</p>
-                <p className="text-3xl text-[#1a1a1a] dark:text-white">43</p>
+                <p className="text-3xl text-[#1a1a1a] dark:text-white">{isAdmin ? "43" : "0"}</p>
                 <p className="text-xs text-[#ef4444] flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
                   Needs attention
@@ -261,7 +269,7 @@ export default function Dashboard() {
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-sm text-[#737373] dark:text-[#94a3b8]">Approved Loans</p>
-                <p className="text-3xl text-[#1a1a1a] dark:text-white">189</p>
+                <p className="text-3xl text-[#1a1a1a] dark:text-white">{isAdmin ? "189" : "0"}</p>
                 <p className="text-xs text-[#10b981] flex items-center gap-1">
                   <CheckCircle className="w-3 h-3" />
                   76.5% approval rate
@@ -298,7 +306,7 @@ export default function Dashboard() {
             <ResponsiveContainer width="100%" height={200}>
               <PieChart>
                 <Pie
-                  data={riskDistribution}
+                  data={currentRiskDistribution}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -306,7 +314,7 @@ export default function Dashboard() {
                   paddingAngle={3}
                   dataKey="value"
                 >
-                  {riskDistribution.map((entry, index) => (
+                  {currentRiskDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -314,7 +322,7 @@ export default function Dashboard() {
               </PieChart>
             </ResponsiveContainer>
             <div className="grid grid-cols-3 gap-3 mt-4">
-              {riskDistribution.map((item) => (
+              {currentRiskDistribution.map((item) => (
                 <div key={item.name} className="text-center">
                   <div className="w-3 h-3 rounded-full mx-auto mb-1" style={{ backgroundColor: item.color }} />
                   <p className="text-xs text-[#737373] dark:text-[#94a3b8]">{item.name}</p>
@@ -331,7 +339,7 @@ export default function Dashboard() {
               <Bell className="w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
             </div>
             <div className="space-y-3">
-              {alerts.map((alert) => (
+              {currentAlerts.map((alert) => (
                 <div
                   key={alert.id}
                   className={`p-4 rounded-xl border-l-4 ${getAlertColor(alert.type)} transition-all hover:shadow-md`}
@@ -355,7 +363,7 @@ export default function Dashboard() {
         <div className="bg-white dark:bg-[#1e293b] rounded-[20px] p-6 shadow-lg border border-[#e5e5e5] dark:border-[#334155]">
           <h3 className="text-lg text-[#1a1a1a] dark:text-white mb-6">Application & Risk Trends</h3>
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={trendData}>
+            <LineChart data={currentTrendData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" className="dark:stroke-[#334155]" />
               <XAxis dataKey="month" stroke="#737373" className="dark:stroke-[#94a3b8]" />
               <YAxis stroke="#737373" className="dark:stroke-[#94a3b8]" />
@@ -477,7 +485,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e5e5e5] dark:divide-[#334155]">
-                {appData.map((app) => (
+                {currentApplications.map((app) => (
                   <tr key={app.id} className="hover:bg-[#fafafa] dark:hover:bg-[#334155] transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-[#1a1a1a] dark:text-white">{app.id}</span>
