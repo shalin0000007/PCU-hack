@@ -1,264 +1,317 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft, Download, Eye, Trash2 } from "lucide-react";
+import {
+  Search,
+  Filter,
+  Calendar,
+  Download,
+  Eye,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
+} from "lucide-react";
 import Layout from "../components/Layout";
 
-const dummyHistoryData = [
+const dummyHistory = [
   {
     id: "APP-2024-001",
     company: "TechVista Solutions Pvt Ltd",
+    loanAmount: "₹50,00,000",
     riskScore: 72,
     riskLevel: "low",
-    date: "2026-03-15",
     status: "Approved",
+    date: "2024-03-15",
+    analyst: "Rahul Kumar",
   },
   {
     id: "APP-2024-002",
     company: "Global Exports & Trading Co",
+    loanAmount: "₹1,20,00,000",
     riskScore: 56,
     riskLevel: "medium",
-    date: "2026-03-12",
     status: "Under Review",
+    date: "2024-03-14",
+    analyst: "Priya Sharma",
   },
   {
     id: "APP-2024-003",
     company: "Urban Construction Ltd",
+    loanAmount: "₹3,00,00,000",
     riskScore: 31,
     riskLevel: "high",
-    date: "2026-03-10",
-    status: "Rejected",
+    status: "Flagged",
+    date: "2024-03-13",
+    analyst: "Amit Patel",
   },
   {
     id: "APP-2024-004",
     company: "Fresh Farms Agriculture",
+    loanAmount: "₹75,00,000",
     riskScore: 68,
     riskLevel: "low",
-    date: "2026-03-08",
     status: "Approved",
+    date: "2024-03-12",
+    analyst: "Rahul Kumar",
   },
   {
     id: "APP-2024-005",
     company: "Retail Chain Ventures",
+    loanAmount: "₹2,50,00,000",
     riskScore: 45,
     riskLevel: "medium",
-    date: "2026-03-05",
-    status: "Under Review",
-  },
-  {
-    id: "APP-2024-006",
-    company: "Innovative Software Labs",
-    riskScore: 78,
-    riskLevel: "low",
-    date: "2026-03-02",
-    status: "Approved",
-  },
-  {
-    id: "APP-2024-007",
-    company: "Metro Logistics Services",
-    riskScore: 52,
-    riskLevel: "medium",
-    date: "2026-02-28",
-    status: "Approved",
-  },
-  {
-    id: "APP-2024-008",
-    company: "Premier Manufacturing Inc",
-    riskScore: 38,
-    riskLevel: "high",
-    date: "2026-02-25",
-    status: "Rejected",
+    status: "Processing",
+    date: "2024-03-11",
+    analyst: "Priya Sharma",
   },
 ];
 
 export default function History() {
   const navigate = useNavigate();
-  const [historyData, setHistoryData] = useState<any[]>(dummyHistoryData);
+  const [applications, setApplications] = useState<any[]>(dummyHistory);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterRisk, setFilterRisk] = useState("all");
 
   useEffect(() => {
     fetch("http://localhost:8000/api/applications")
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-            setHistoryData([...data, ...dummyHistoryData]);
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setApplications([...data, ...dummyHistory]);
         }
       })
-      .catch(err => console.error("Failed to fetch history:", err));
+      .catch((err) => console.error("Failed to fetch applications:", err));
   }, []);
 
   const handleDelete = async (id: string) => {
-    if (id.startsWith("APP-2024-")) {
-      setHistoryData(prev => prev.filter(app => app.id !== id));
-      return;
-    }
-    
     try {
-      const res = await fetch(`http://localhost:8000/api/applications/${id}`, {
-        method: "DELETE"
-      });
-      if (res.ok) {
-        setHistoryData(prev => prev.filter(app => app.id !== id));
-      } else {
-        console.error("Failed to delete application from server");
-      }
+      await fetch(`http://localhost:8000/api/applications/${id}`, { method: "DELETE" });
+      setApplications(applications.filter((app) => app.id !== id));
     } catch (err) {
-      console.error(err);
+      console.error("Failed to delete:", err);
     }
   };
 
   const getRiskColor = (level: string) => {
-    switch (level) {
+    switch (level?.toLowerCase()) {
       case "low":
-        return "text-[#10b981] bg-[#d1fae5] dark:bg-[#065f46] dark:text-[#86efac]";
+        return "text-emerald-700 bg-emerald-100";
       case "medium":
-        return "text-[#f59e0b] bg-[#fef3c7] dark:bg-[#78350f] dark:text-[#fcd34d]";
+        return "text-amber-700 bg-amber-100";
       case "high":
-        return "text-[#ef4444] bg-[#fee2e2] dark:bg-[#7f1d1d] dark:text-[#fca5a5]";
+        return "text-red-700 bg-red-100";
       default:
-        return "text-[#737373] bg-[#f5f5f5] dark:bg-[#334155] dark:text-[#94a3b8]";
+        return "text-slate-700 bg-slate-100";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "approved":
+        return <CheckCircle className="w-4 h-4 text-emerald-600" />;
+      case "flagged":
+        return <AlertTriangle className="w-4 h-4 text-red-600" />;
+      default:
+        return <Clock className="w-4 h-4 text-amber-600" />;
     }
   };
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return "text-[#10b981] bg-[#d1fae5] dark:bg-[#065f46] dark:text-[#86efac]";
-      case "Rejected":
-        return "text-[#ef4444] bg-[#fee2e2] dark:bg-[#7f1d1d] dark:text-[#fca5a5]";
-      case "Under Review":
-        return "text-[#f59e0b] bg-[#fef3c7] dark:bg-[#78350f] dark:text-[#fcd34d]";
+    switch (status?.toLowerCase()) {
+      case "approved":
+        return "text-emerald-700 bg-emerald-50 border-emerald-200";
+      case "flagged":
+        return "text-red-700 bg-red-50 border-red-200";
       default:
-        return "text-[#737373] bg-[#f5f5f5] dark:bg-[#334155] dark:text-[#94a3b8]";
+        return "text-amber-700 bg-amber-50 border-amber-200";
     }
   };
 
+  const filteredApps = applications.filter((app) => {
+    const matchesSearch =
+      app.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.id?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = filterStatus === "all" || app.status?.toLowerCase() === filterStatus.toLowerCase();
+    const matchesRisk = filterRisk === "all" || app.riskLevel?.toLowerCase() === filterRisk.toLowerCase();
+    return matchesSearch && matchesStatus && matchesRisk;
+  });
+
+  const stats = [
+    { label: "Total", value: applications.length, icon: FileText, color: "bg-primary-container" },
+    { label: "Approved", value: applications.filter((a) => a.status?.toLowerCase() === "approved").length, icon: CheckCircle, color: "bg-emerald-500" },
+    { label: "Pending", value: applications.filter((a) => ["under review", "processing"].includes(a.status?.toLowerCase())).length, icon: Clock, color: "bg-amber-500" },
+    { label: "Flagged", value: applications.filter((a) => a.status?.toLowerCase() === "flagged").length, icon: AlertTriangle, color: "bg-red-500" },
+  ];
+
   return (
     <Layout>
-      <div className="p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-[#334155] rounded-xl transition-colors border border-[#e5e5e5] dark:border-[#334155]"
-          >
-            <ArrowLeft className="w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
-          </button>
+      <div className="p-6 space-y-6 bg-surface min-h-screen">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl text-[#1a1a1a] dark:text-white">Application History</h1>
-            <p className="text-sm text-[#737373] dark:text-[#94a3b8] mt-1">View all past credit risk assessments</p>
+            <h1 className="text-2xl font-bold text-on-surface font-headline">Application History</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              View and manage all credit risk assessments
+            </p>
           </div>
+          <button className="flex items-center gap-2 px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/30 text-on-surface rounded-xl hover:bg-surface-container-low transition-colors">
+            <Download className="w-4 h-4" />
+            Export
+          </button>
         </div>
 
-        <div className="bg-white dark:bg-[#1e293b] rounded-[20px] shadow-lg border border-[#e5e5e5] dark:border-[#334155]">
-          <div className="p-6 border-b border-[#e5e5e5] dark:border-[#334155]">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg text-[#1a1a1a] dark:text-white">All Applications</h2>
-                <p className="text-sm text-[#737373] dark:text-[#94a3b8] mt-1">
-                  {historyData.length} total applications processed
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <select className="px-4 py-2 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white">
-                  <option>All Status</option>
-                  <option>Approved</option>
-                  <option>Rejected</option>
-                  <option>Under Review</option>
-                </select>
-                <select className="px-4 py-2 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white">
-                  <option>All Risk Levels</option>
-                  <option>Low Risk</option>
-                  <option>Medium Risk</option>
-                  <option>High Risk</option>
-                </select>
+        {/* Stats */}
+        <div className="grid grid-cols-4 gap-4">
+          {stats.map((stat, idx) => (
+            <div
+              key={idx}
+              className="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/20"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.label}</p>
+                  <p className="text-2xl font-bold text-on-surface mt-1 font-headline">{stat.value}</p>
+                </div>
+                <div className={`w-10 h-10 rounded-xl ${stat.color} flex items-center justify-center text-white`}>
+                  <stat.icon className="w-5 h-5" />
+                </div>
               </div>
             </div>
-          </div>
+          ))}
+        </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#e5e5e5] dark:border-[#334155]">
-                  <th className="px-6 py-4 text-left text-xs text-[#737373] dark:text-[#94a3b8] uppercase tracking-wider">
-                    Application ID
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs text-[#737373] dark:text-[#94a3b8] uppercase tracking-wider">
-                    Company Name
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs text-[#737373] dark:text-[#94a3b8] uppercase tracking-wider">
-                    Risk Score
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs text-[#737373] dark:text-[#94a3b8] uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs text-[#737373] dark:text-[#94a3b8] uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs text-[#737373] dark:text-[#94a3b8] uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#e5e5e5] dark:divide-[#334155]">
-                {historyData.map((app) => (
-                  <tr key={app.id} className="hover:bg-[#fafafa] dark:hover:bg-[#334155] transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-[#1a1a1a] dark:text-white">{app.id}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-[#1a1a1a] dark:text-white">{app.company}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-[#1a1a1a] dark:text-white">{app.riskScore}</span>
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs ${getRiskColor(app.riskLevel)}`}
-                        >
-                          {app.riskLevel.charAt(0).toUpperCase() + app.riskLevel.slice(1)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-[#737373] dark:text-[#94a3b8]">
-                        {new Date(app.date).toLocaleDateString("en-IN", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
+        {/* Filters */}
+        <div className="flex items-center gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search by company or ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded-xl text-sm placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+            />
+          </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="all">All Status</option>
+            <option value="approved">Approved</option>
+            <option value="under review">Under Review</option>
+            <option value="processing">Processing</option>
+            <option value="flagged">Flagged</option>
+          </select>
+          <select
+            value={filterRisk}
+            onChange={(e) => setFilterRisk(e.target.value)}
+            className="px-4 py-2.5 bg-surface-container-lowest border border-outline-variant/30 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="all">All Risk Levels</option>
+            <option value="low">Low Risk</option>
+            <option value="medium">Medium Risk</option>
+            <option value="high">High Risk</option>
+          </select>
+        </div>
+
+        {/* Table */}
+        <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-surface-container-low">
+              <tr>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Application
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Loan Amount
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Risk Score
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Status
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Date
+                </th>
+                <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-outline-variant/20">
+              {filteredApps.map((app) => (
+                <tr key={app.id} className="hover:bg-surface-container-low transition-colors">
+                  <td className="px-5 py-4">
+                    <div>
+                      <p className="font-medium text-on-surface">{app.company}</p>
+                      <p className="text-xs text-muted-foreground">{app.id}</p>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-on-surface font-medium">{app.loanAmount}</td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-on-surface">{app.riskScore}</span>
+                      <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getRiskColor(app.riskLevel)}`}>
+                        {app.riskLevel}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-xs ${getStatusColor(app.status)}`}>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(app.status)}
+                      <span className={`px-2.5 py-1 text-xs font-medium rounded-full border ${getStatusColor(app.status)}`}>
                         {app.status}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => navigate(`/credit-analysis/${app.id}`)}
-                          className="px-3 py-1.5 text-[#00b386] hover:bg-[#e5f7f3] dark:hover:bg-[#0f766e]/20 rounded-lg transition-colors flex items-center gap-1 text-sm"
-                        >
-                          <Eye className="w-4 h-4" />
-                          View
-                        </button>
-                        <button
-                          onClick={() => navigate(`/report/${app.id}`)}
-                          className="px-3 py-1.5 text-[#737373] dark:text-[#94a3b8] hover:bg-[#f5f5f5] dark:hover:bg-[#334155] rounded-lg transition-colors flex items-center gap-1 text-sm"
-                        >
-                          <Download className="w-4 h-4" />
-                          Report
-                        </button>
-                        <button
-                          onClick={() => handleDelete(app.id)}
-                          className="px-3 py-1.5 text-[#ef4444] hover:bg-[#fee2e2] dark:hover:bg-[#7f1d1d]/20 rounded-lg transition-colors flex items-center gap-1 text-sm"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+                  </td>
+                  <td className="px-5 py-4 text-sm text-muted-foreground">{app.date}</td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => navigate(`/credit-analysis/${app.id}`)}
+                        className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                        title="View Details"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(app.id)}
+                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Pagination */}
+          <div className="flex items-center justify-between px-5 py-4 border-t border-outline-variant/20">
+            <p className="text-sm text-muted-foreground">
+              Showing {filteredApps.length} of {applications.length} applications
+            </p>
+            <div className="flex items-center gap-2">
+              <button className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg disabled:opacity-50">
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <button className="px-3 py-1.5 bg-primary text-primary-foreground rounded-lg text-sm font-medium">
+                1
+              </button>
+              <button className="px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg text-sm">2</button>
+              <button className="px-3 py-1.5 text-slate-600 hover:bg-slate-100 rounded-lg text-sm">3</button>
+              <button className="p-2 text-slate-400 hover:bg-slate-100 rounded-lg">
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

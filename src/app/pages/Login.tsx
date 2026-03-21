@@ -1,214 +1,207 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { Eye, EyeOff, Lock, User, Sparkles } from "lucide-react";
-import { motion } from "motion/react";
+import { Eye, EyeOff, Sparkles, ArrowRight, Shield, Zap, TrendingUp } from "lucide-react";
 
 export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    username: "",
-    password: "",
-  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate login
     navigate("/dashboard");
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f8fffe] via-white to-[#f0f9ff] dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          className="absolute top-20 left-20 w-64 h-64 bg-[#00b386]/10 dark:bg-[#00b386]/5 rounded-full blur-3xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
-        <motion.div
-          className="absolute bottom-20 right-20 w-96 h-96 bg-blue-500/10 dark:bg-blue-500/5 rounded-full blur-3xl"
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.2, 0.4, 0.2],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-        />
+    <div className="min-h-screen flex bg-surface">
+      {/* Left Panel - Branding */}
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 p-12 flex-col justify-between relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-20 left-20 w-72 h-72 bg-white rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-20 w-96 h-96 bg-emerald-300 rounded-full blur-3xl" />
+        </div>
+
+        {/* Logo */}
+        <div className="relative z-10">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-white font-headline">Intelli-Credit</h1>
+              <p className="text-emerald-200 text-sm">AI Risk Engine</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Features */}
+        <div className="relative z-10 space-y-8">
+          <h2 className="text-4xl font-bold text-white leading-tight font-headline">
+            Intelligent Credit Risk
+            <br />
+            Assessment Platform
+          </h2>
+          <p className="text-emerald-100 text-lg max-w-md">
+            Leverage AI-powered analytics to make smarter lending decisions with confidence.
+          </p>
+
+          <div className="space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-white font-medium">Real-time Risk Analysis</p>
+                <p className="text-emerald-200 text-sm">Instant fraud detection and risk scoring</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                <Zap className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-white font-medium">AI-Powered Insights</p>
+                <p className="text-emerald-200 text-sm">Deep learning models for accurate predictions</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="text-white font-medium">Comprehensive Reports</p>
+                <p className="text-emerald-200 text-sm">Detailed analytics and recommendations</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="relative z-10">
+          <p className="text-emerald-200 text-sm">© 2024 Intelli-Credit AI. All rights reserved.</p>
+        </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="w-full max-w-md relative z-10"
-      >
-        {/* Login Card with Glassmorphism */}
-        <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-700/50 p-8">
-          {/* Logo and Title */}
-          <motion.div
-            initial={{ scale: 0.9 }}
-            animate={{ scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-center mb-8"
-          >
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#00b386] to-[#00d9a0] rounded-2xl mb-4 shadow-lg shadow-[#00b386]/20">
-              <Sparkles className="w-8 h-8 text-white" />
+      {/* Right Panel - Login Form */}
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="w-full max-w-md space-y-8">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center gap-3 justify-center mb-8">
+            <div className="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-[#00b386] to-[#00d9a0] bg-clip-text text-transparent mb-2">
-              Intelli-Credit AI
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
-              AI-Powered Credit Risk Analysis Platform
-            </p>
-          </motion.div>
+            <h1 className="text-xl font-bold text-emerald-700 font-headline">Intelli-Credit</h1>
+          </div>
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Username Field */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-            >
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Username
-              </label>
-              <div className="relative group">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#00b386] transition-colors" />
-                <input
-                  type="text"
-                  value={formData.username}
-                  onChange={(e) =>
-                    setFormData({ ...formData, username: e.target.value })
-                  }
-                  className="w-full pl-11 pr-4 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-[#00b386] focus:border-transparent outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400"
-                  placeholder="Enter your username"
-                  required
-                />
+          <div className="text-center lg:text-left">
+            <h2 className="text-3xl font-bold text-on-surface font-headline">Welcome back</h2>
+            <p className="text-muted-foreground mt-2">Sign in to your account to continue</p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-on-surface">Email Address</label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="analyst@intellicredit.ai"
+                className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-on-surface">Password</label>
+                <button type="button" className="text-sm text-primary hover:underline">
+                  Forgot password?
+                </button>
               </div>
-            </motion.div>
-
-            {/* Password Field */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
-            >
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Password
-              </label>
-              <div className="relative group">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-[#00b386] transition-colors" />
+              <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  className="w-full pl-11 pr-12 py-3 bg-white dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-[#00b386] focus:border-transparent outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400"
-                  placeholder="Enter your password"
-                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full px-4 py-3 bg-surface-container-lowest border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-12"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#00b386] transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-on-surface"
                 >
-                  {showPassword ? (
-                    <EyeOff className="w-5 h-5" />
-                  ) : (
-                    <Eye className="w-5 h-5" />
-                  )}
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
-            </motion.div>
+            </div>
 
-            {/* Remember Me & Forgot Password */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5, duration: 0.5 }}
-              className="flex items-center justify-between text-sm"
-            >
-              <label className="flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="w-4 h-4 rounded border-gray-300 text-[#00b386] focus:ring-[#00b386] focus:ring-offset-0"
-                />
-                <span className="ml-2 text-gray-600 dark:text-gray-400">
-                  Remember me
-                </span>
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="remember"
+                className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary/20"
+              />
+              <label htmlFor="remember" className="text-sm text-muted-foreground">
+                Remember me for 30 days
               </label>
-              <a
-                href="#"
-                className="text-[#00b386] hover:text-[#00d9a0] font-medium transition-colors"
-              >
-                Forgot password?
-              </a>
-            </motion.div>
+            </div>
 
-            {/* Login Button */}
-            <motion.button
+            <button
               type="submit"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-3 bg-gradient-to-r from-[#00b386] to-[#00d9a0] text-white rounded-xl font-medium shadow-lg shadow-[#00b386]/30 hover:shadow-xl hover:shadow-[#00b386]/40 transition-all"
+              className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25"
             >
               Sign In
-            </motion.button>
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </form>
 
-          {/* Divider */}
-          <div className="relative my-6">
+          <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+              <div className="w-full border-t border-outline-variant/30" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white/70 dark:bg-gray-800/70 text-gray-500 dark:text-gray-400">
-                For Credit Officers Only
-              </span>
+              <span className="px-4 bg-surface text-muted-foreground">Or continue with</span>
             </div>
           </div>
 
-          {/* Additional Info */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-            className="text-center"
-          >
-            <p className="text-xs text-gray-500 dark:text-gray-500">
-              Secure • Enterprise Banking Platform • AI-Powered
-            </p>
-          </motion.div>
-        </div>
+          <div className="grid grid-cols-2 gap-4">
+            <button className="flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-lowest border border-outline-variant/30 rounded-xl text-on-surface hover:bg-surface-container-low transition-colors">
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
+                <path
+                  fill="currentColor"
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                />
+                <path
+                  fill="currentColor"
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                />
+              </svg>
+              Google
+            </button>
+            <button className="flex items-center justify-center gap-2 px-4 py-3 bg-surface-container-lowest border border-outline-variant/30 rounded-xl text-on-surface hover:bg-surface-container-low transition-colors">
+              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+              </svg>
+              GitHub
+            </button>
+          </div>
 
-        {/* Footer */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8, duration: 0.5 }}
-          className="text-center mt-6"
-        >
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            © 2026 Intelli-Credit AI. All rights reserved.
+          <p className="text-center text-sm text-muted-foreground">
+            Don't have an account?{" "}
+            <button className="text-primary font-medium hover:underline">Request access</button>
           </p>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     </div>
   );
 }

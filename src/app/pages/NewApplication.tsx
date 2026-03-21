@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft, Upload, Database, FileSpreadsheet, Building2 } from "lucide-react";
+import { ArrowLeft, Upload, Database, FileSpreadsheet, Building2, Sparkles } from "lucide-react";
 import Layout from "../components/Layout";
 
 export default function NewApplication() {
@@ -14,6 +14,7 @@ export default function NewApplication() {
     bankFile: null as File | null,
     externalCompany: "",
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleFileChange = (field: "gstFile" | "bankFile", file: File | null) => {
     setFormData({ ...formData, [field]: file });
@@ -37,6 +38,7 @@ export default function NewApplication() {
       return;
     }
 
+    setIsSubmitting(true);
     const data = new FormData();
     data.append("company_name", formData.companyName);
     data.append("industry", formData.industry);
@@ -61,186 +63,208 @@ export default function NewApplication() {
     } catch (err) {
       console.error("Analysis Error:", err);
       alert("Failed to connect to the backend server. Please make sure the FastAPI server is running.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
+      <div className="p-6 space-y-6 bg-surface min-h-screen">
+        {/* Header */}
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate("/dashboard")}
-            className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-[#334155] rounded-xl transition-colors border border-[#e5e5e5] dark:border-[#334155]"
+            className="w-10 h-10 flex items-center justify-center hover:bg-surface-container-high rounded-xl transition-colors border border-outline-variant/30"
           >
-            <ArrowLeft className="w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
+            <ArrowLeft className="w-5 h-5 text-muted-foreground" />
           </button>
           <div>
-            <h1 className="text-2xl text-[#1a1a1a] dark:text-white">New Loan Application</h1>
-            <p className="text-sm text-[#737373] dark:text-[#94a3b8] mt-1">Enter company details and upload financial data</p>
+            <h1 className="text-2xl font-bold text-on-surface font-headline">New Loan Application</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Enter company details and upload financial data for AI analysis
+            </p>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#1e293b] rounded-[20px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-8">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 pb-4 border-b border-[#e5e5e5] dark:border-[#334155]">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#e5f7f3] to-[#d1fae5] dark:from-[#0f766e] dark:to-[#065f46] rounded-xl flex items-center justify-center">
-                <Building2 className="w-5 h-5 text-[#00b386]" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Form */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Company Information */}
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-primary-container rounded-lg flex items-center justify-center">
+                  <Building2 className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-on-surface">Company Information</h3>
+                  <p className="text-sm text-muted-foreground">Basic details about the applicant</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg text-[#1a1a1a] dark:text-white">Company Information</h2>
-                <p className="text-sm text-[#737373] dark:text-[#94a3b8]">Basic details about the applicant company</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">Company Name *</label>
+                  <input
+                    type="text"
+                    value={formData.companyName}
+                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                    placeholder="Enter company name"
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">Industry</label>
+                  <select
+                    value={formData.industry}
+                    onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  >
+                    <option value="">Select Industry</option>
+                    <option value="Information Technology">Information Technology</option>
+                    <option value="Manufacturing">Manufacturing</option>
+                    <option value="Retail">Retail</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Construction">Construction</option>
+                    <option value="Agriculture">Agriculture</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">Loan Amount (₹) *</label>
+                  <input
+                    type="number"
+                    value={formData.loanAmount}
+                    onChange={(e) => setFormData({ ...formData, loanAmount: e.target.value })}
+                    placeholder="Enter amount"
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">External Company Name</label>
+                  <input
+                    type="text"
+                    value={formData.externalCompany}
+                    onChange={(e) => setFormData({ ...formData, externalCompany: e.target.value })}
+                    placeholder="For news search"
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  />
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                  <label className="text-sm font-medium text-on-surface">Purpose of Loan</label>
+                  <textarea
+                    value={formData.purpose}
+                    onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
+                    placeholder="Describe the purpose of this loan application"
+                    rows={3}
+                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-on-surface placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary resize-none"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm text-[#1a1a1a] dark:text-white">Company Name</label>
-                <input
-                  type="text"
-                  value={formData.companyName}
-                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                  placeholder="Enter company name"
-                  className="w-full px-4 py-3 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent transition-all text-[#1a1a1a] dark:text-white placeholder:text-[#737373] dark:placeholder:text-[#94a3b8]"
-                />
+            {/* File Upload */}
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-secondary rounded-lg flex items-center justify-center">
+                  <FileSpreadsheet className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-on-surface">Financial Documents</h3>
+                  <p className="text-sm text-muted-foreground">Upload GST and bank statements for analysis</p>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm text-[#1a1a1a] dark:text-white">Industry</label>
-                <select
-                  value={formData.industry}
-                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                  className="w-full px-4 py-3 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent transition-all text-[#1a1a1a] dark:text-white"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* GST Upload */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">GST Returns (CSV)</label>
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-outline-variant/50 rounded-xl cursor-pointer hover:border-primary/50 hover:bg-surface-container-low transition-all">
+                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                    <span className="text-sm text-muted-foreground">
+                      {formData.gstFile ? formData.gstFile.name : "Click to upload GST file"}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      className="hidden"
+                      onChange={(e) => handleFileChange("gstFile", e.target.files?.[0] || null)}
+                    />
+                  </label>
+                </div>
+
+                {/* Bank Upload */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-on-surface">Bank Statements (CSV)</label>
+                  <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-outline-variant/50 rounded-xl cursor-pointer hover:border-primary/50 hover:bg-surface-container-low transition-all">
+                    <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                    <span className="text-sm text-muted-foreground">
+                      {formData.bankFile ? formData.bankFile.name : "Click to upload bank file"}
+                    </span>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      className="hidden"
+                      onChange={(e) => handleFileChange("bankFile", e.target.files?.[0] || null)}
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="space-y-6">
+            {/* Quick Actions */}
+            <div className="bg-surface-container-lowest rounded-xl p-6 shadow-sm border border-outline-variant/20">
+              <h3 className="font-semibold text-on-surface mb-4">Quick Actions</h3>
+              <div className="space-y-3">
+                <button
+                  onClick={handleUseSampleData}
+                  className="w-full flex items-center gap-3 px-4 py-3 bg-surface-container-low hover:bg-surface-container-high rounded-xl text-on-surface transition-colors"
                 >
-                  <option value="">Select industry</option>
-                  <option value="Information Technology">Information Technology</option>
-                  <option value="Manufacturing">Manufacturing</option>
-                  <option value="Retail">Retail</option>
-                  <option value="Construction">Construction</option>
-                  <option value="Agriculture">Agriculture</option>
-                  <option value="Healthcare">Healthcare</option>
-                  <option value="Education">Education</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm text-[#1a1a1a] dark:text-white">Loan Amount (₹)</label>
-                <input
-                  type="number"
-                  value={formData.loanAmount}
-                  onChange={(e) => setFormData({ ...formData, loanAmount: e.target.value })}
-                  placeholder="Enter loan amount"
-                  className="w-full px-4 py-3 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent transition-all text-[#1a1a1a] dark:text-white placeholder:text-[#737373] dark:placeholder:text-[#94a3b8]"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm text-[#1a1a1a] dark:text-white">Purpose</label>
-                <input
-                  type="text"
-                  value={formData.purpose}
-                  onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-                  placeholder="Purpose of loan"
-                  className="w-full px-4 py-3 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent transition-all text-[#1a1a1a] dark:text-white placeholder:text-[#737373] dark:placeholder:text-[#94a3b8]"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 pb-4 border-b border-[#e5e5e5] dark:border-[#334155]">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#dbeafe] to-[#bfdbfe] dark:from-[#1e3a8a] dark:to-[#1e40af] rounded-xl flex items-center justify-center">
-                <Upload className="w-5 h-5 text-[#3b82f6]" />
-              </div>
-              <div>
-                <h2 className="text-lg text-[#1a1a1a] dark:text-white">Data Upload</h2>
-                <p className="text-sm text-[#737373] dark:text-[#94a3b8]">Upload GST and bank statement CSV files</p>
+                  <Database className="w-5 h-5 text-primary" />
+                  <span className="text-sm font-medium">Use Sample Data</span>
+                </button>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-sm text-[#1a1a1a] dark:text-white">GST Returns (CSV)</label>
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) => handleFileChange("gstFile", e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="gst-upload"
-                  />
-                  <label
-                    htmlFor="gst-upload"
-                    className="flex items-center gap-3 px-4 py-4 bg-[#f5f5f5] dark:bg-[#334155] border-2 border-dashed border-[#e5e5e5] dark:border-[#475569] rounded-xl cursor-pointer hover:border-[#00b386] hover:bg-[#e5f7f3] dark:hover:bg-[#0f766e]/20 transition-all"
-                  >
-                    <FileSpreadsheet className="w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
-                    <span className="text-sm text-[#737373] dark:text-[#94a3b8]">
-                      {formData.gstFile ? formData.gstFile.name : "Choose GST CSV file"}
-                    </span>
-                  </label>
+            {/* AI Features */}
+            <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-6 text-white">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Sparkles className="w-5 h-5" />
                 </div>
+                <h3 className="font-semibold">AI Analysis</h3>
               </div>
-
-              <div className="space-y-2">
-                <label className="text-sm text-[#1a1a1a] dark:text-white">Bank Statements (CSV)</label>
-                <div className="relative">
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) => handleFileChange("bankFile", e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="bank-upload"
-                  />
-                  <label
-                    htmlFor="bank-upload"
-                    className="flex items-center gap-3 px-4 py-4 bg-[#f5f5f5] dark:bg-[#334155] border-2 border-dashed border-[#e5e5e5] dark:border-[#475569] rounded-xl cursor-pointer hover:border-[#00b386] hover:bg-[#e5f7f3] dark:hover:bg-[#0f766e]/20 transition-all"
-                  >
-                    <FileSpreadsheet className="w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
-                    <span className="text-sm text-[#737373] dark:text-[#94a3b8]">
-                      {formData.bankFile ? formData.bankFile.name : "Choose Bank CSV file"}
-                    </span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 pb-4 border-b border-[#e5e5e5] dark:border-[#334155]">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#fef3c7] to-[#fde68a] dark:from-[#78350f] dark:to-[#92400e] rounded-xl flex items-center justify-center">
-                <Database className="w-5 h-5 text-[#f59e0b]" />
-              </div>
-              <div>
-                <h2 className="text-lg text-[#1a1a1a] dark:text-white">External Data</h2>
-                <p className="text-sm text-[#737373] dark:text-[#94a3b8]">Fetch additional data from external sources</p>
-              </div>
+              <p className="text-emerald-100 text-sm mb-4">
+                Our AI will analyze financial patterns, detect anomalies, and generate comprehensive risk reports.
+              </p>
+              <ul className="space-y-2 text-sm text-emerald-100">
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-emerald-300 rounded-full" />
+                  GST & Bank reconciliation
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-emerald-300 rounded-full" />
+                  Real-time news sentiment
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 bg-emerald-300 rounded-full" />
+                  Risk score calculation
+                </li>
+              </ul>
             </div>
 
-            <div className="flex gap-4">
-              <input
-                type="text"
-                value={formData.externalCompany}
-                onChange={(e) => setFormData({ ...formData, externalCompany: e.target.value })}
-                placeholder="Enter company name for external data"
-                className="flex-1 px-4 py-3 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent transition-all text-[#1a1a1a] dark:text-white placeholder:text-[#737373] dark:placeholder:text-[#94a3b8]"
-              />
-              <button className="px-6 py-3 bg-white dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] text-[#1a1a1a] dark:text-white rounded-xl hover:border-[#00b386] hover:text-[#00b386] transition-all">
-                Fetch Data
-              </button>
-            </div>
-          </div>
-
-          <div className="flex gap-4 pt-6 border-t border-[#e5e5e5] dark:border-[#334155]">
-            <button
-              onClick={handleUseSampleData}
-              className="px-6 py-3 bg-white dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] text-[#1a1a1a] dark:text-white rounded-xl hover:border-[#00b386] hover:text-[#00b386] transition-all"
-            >
-              Use Sample Data
-            </button>
+            {/* Submit Button */}
             <button
               onClick={handleStartAnalysis}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-[#00b386] to-[#059669] text-white rounded-xl hover:shadow-lg transition-all duration-200"
+              disabled={isSubmitting}
+              className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors shadow-lg shadow-primary/25 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Start Analysis →
+              <Sparkles className="w-5 h-5" />
+              {isSubmitting ? "Starting Analysis..." : "Start AI Analysis"}
             </button>
           </div>
         </div>
