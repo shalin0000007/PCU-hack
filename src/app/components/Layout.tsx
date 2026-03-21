@@ -1,5 +1,6 @@
 import { ReactNode, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
+import { supabase } from "../../supabase";
 import {
   LayoutDashboard,
   FileText,
@@ -34,14 +35,30 @@ export default function Layout({ children }: LayoutProps) {
       navigate("/");
       return;
     }
+    try {
+      const authParsed = JSON.parse(auth);
+      // Determine display name gracefully pulling from Auth or parsing email prefix
+      if (authParsed.fullName) {
+         setUserName(authParsed.fullName);
+      } else if (authParsed.username) {
+         // Convert officer.id@... -> Officer Id
+         const prefix = authParsed.username.split("@")[0];
+         const formatted = prefix.split(/[._-]/).map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+         setUserName(formatted);
+      }
+    } catch (e) {}
+
     const settings = localStorage.getItem("intelli-credit-settings");
     if (settings) {
-      const parsed = JSON.parse(settings);
-      if (parsed.fullName) setUserName(parsed.fullName);
+      try {
+        const parsed = JSON.parse(settings);
+        if (parsed.fullName) setUserName(parsed.fullName);
+      } catch (e) {}
     }
   }, [navigate]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     localStorage.removeItem("intelli-credit-auth");
     navigate("/");
   };

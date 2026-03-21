@@ -49,14 +49,20 @@ export default function Dashboard() {
   const [riskDistribution, setRiskDistribution] = useState(defaultRiskDist);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/applications")
+    const auth = localStorage.getItem("intelli-credit-auth");
+    const headers: Record<string, string> = {};
+    if (auth) {
+      try { headers["x-user-email"] = JSON.parse(auth).username; } catch (e) {}
+    }
+
+    fetch("http://localhost:8000/api/applications", { headers })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setAppData(data);
       })
       .catch(err => console.error("Failed to fetch applications:", err));
 
-    fetch("http://localhost:8000/api/dashboard-stats")
+    fetch("http://localhost:8000/api/dashboard-stats", { headers })
       .then(res => res.json())
       .then(data => {
         setStats({ total: data.total || 0, highRisk: data.highRisk || 0, approved: data.approved || 0, approvalRate: data.approvalRate || 0 });
@@ -132,7 +138,7 @@ export default function Dashboard() {
       });
       return {
         month: months[d.getMonth()],
-        applications: monthApps.length || Math.floor(Math.random() * 5 + 1),
+        applications: monthApps.length,
         highRisk: monthApps.filter(a => a.riskLevel === "high").length,
       };
     });
@@ -221,16 +227,12 @@ export default function Dashboard() {
         </div>
 
         {/* Stats Row - Glassmorphism */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
           <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-2xl p-6 shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] hover:shadow-xl transition-all">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-sm font-medium text-[#737373] dark:text-[#86948c]">Total Applications</p>
                 <p className="text-3xl font-bold text-[#1a1a1a] dark:text-[#dae2fd]">{stats.total}</p>
-                <p className="text-xs font-medium text-[#00b386] dark:text-[#50ddad] flex items-center gap-1 mt-2">
-                  <TrendingUp className="w-3.5 h-3.5" />
-                  +12% this month
-                </p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-[#e5f7f3] to-[#d1fae5] dark:from-[#00b386]/20 dark:to-[#059669]/10 rounded-xl flex items-center justify-center shadow-inner">
                 <FileText className="w-6 h-6 text-[#00b386] dark:text-[#50ddad]" />
@@ -270,21 +272,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-2xl p-6 shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] hover:shadow-xl transition-all">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <p className="text-sm font-medium text-[#737373] dark:text-[#86948c]">Avg Processing</p>
-                <p className="text-3xl font-bold text-[#1a1a1a] dark:text-[#dae2fd]">2.4h</p>
-                <p className="text-xs font-medium text-[#3b82f6] dark:text-[#60a5fa] flex items-center gap-1 mt-2">
-                  <Zap className="w-3.5 h-3.5" />
-                  15% faster
-                </p>
-              </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-[#dbeafe] to-[#bfdbfe] dark:from-[#3b82f6]/20 dark:to-[#2563eb]/10 rounded-xl flex items-center justify-center shadow-inner">
-                <Activity className="w-6 h-6 text-[#3b82f6] dark:text-[#60a5fa]" />
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Two Column Layout: Risk Distribution & Real-Time Alerts */}
@@ -300,7 +287,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={riskDistribution}
+                    data={stats.total > 0 ? riskDistribution : [{ name: "No Data", value: 1, color: "rgba(115, 115, 115, 0.1)" }]}
                     cx="50%"
                     cy="50%"
                     innerRadius={70}
@@ -309,7 +296,7 @@ export default function Dashboard() {
                     dataKey="value"
                     stroke="none"
                   >
-                    {riskDistribution.map((entry, index) => (
+                    {(stats.total > 0 ? riskDistribution : [{ name: "No Data", value: 1, color: "rgba(115, 115, 115, 0.1)" }]).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -320,8 +307,8 @@ export default function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-2xl font-bold text-[#1a1a1a] dark:text-[#dae2fd]">88%</span>
-                <span className="text-[#737373] dark:text-[#86948c] text-[10px] uppercase font-bold tracking-widest mt-1">Confidence</span>
+                <span className="text-2xl font-bold text-[#1a1a1a] dark:text-[#dae2fd]">{stats.total > 0 ? `${stats.approvalRate}%` : "N/A"}</span>
+                <span className="text-[#737373] dark:text-[#86948c] text-[10px] uppercase font-bold tracking-widest mt-1">Approval</span>
               </div>
             </div>
 

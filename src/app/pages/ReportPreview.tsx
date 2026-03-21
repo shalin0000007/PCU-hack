@@ -19,12 +19,18 @@ export default function ReportPreview() {
   const [inputMessage, setInputMessage] = useState("");
 
   useEffect(() => {
+    const auth = localStorage.getItem("intelli-credit-auth");
+    const headers: Record<string, string> = {};
+    if (auth) {
+      try { headers["x-user-email"] = JSON.parse(auth).username; } catch (e) {}
+    }
+
     Promise.all([
-      fetch(`http://localhost:8000/api/analysis/${id}`).then(res => {
+      fetch(`http://localhost:8000/api/analysis/${id}`, { headers }).then(res => {
         if (!res.ok) throw new Error("Failed to fetch analysis");
         return res.json();
       }),
-      fetch(`http://localhost:8000/api/ai-assessment/${id}`).then(res => {
+      fetch(`http://localhost:8000/api/ai-assessment/${id}`, { headers }).then(res => {
         if (!res.ok) throw new Error("Failed to fetch ai");
         return res.json();
       })
@@ -87,11 +93,7 @@ export default function ReportPreview() {
 
   const formattedRecommendedAmount = formatCurrency(recommendedAmount);
 
-  const comparisonData = report?.chart_data?.industry_insights || [
-    { category: "Profit Margin", company: 12.5, industry: 15.2 },
-    { category: "Debt Ratio", company: 68, industry: 52 },
-    { category: "Liquidity", company: 1.8, industry: 2.1 },
-  ];
+  const comparisonData = report?.chart_data?.industry_insights || null;
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
@@ -100,10 +102,16 @@ export default function ReportPreview() {
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setInputMessage("");
     
+    const auth = localStorage.getItem("intelli-credit-auth");
+    const headers: Record<string, string> = { "Content-Type": "application/json" };
+    if (auth) {
+      try { headers["x-user-email"] = JSON.parse(auth).username; } catch (e) {}
+    }
+
     try {
       const response = await fetch(`http://localhost:8000/api/chat/${id}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           message: userMsg
         })
@@ -302,28 +310,30 @@ export default function ReportPreview() {
               </div>
 
               {/* Comparison Chart */}
-              <div>
-                <h3 className="text-lg text-[#1a1a1a] dark:text-white mb-3 pb-2 border-b border-[#e5e5e5] dark:border-[#334155]">
-                  Peer Comparison
-                </h3>
-                <ResponsiveContainer width="100%" height={250}>
-                  <BarChart data={comparisonData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" className="dark:stroke-[#334155]" />
-                    <XAxis dataKey="category" stroke="#737373" className="dark:stroke-[#94a3b8]" />
-                    <YAxis stroke="#737373" className="dark:stroke-[#94a3b8]" />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#1e293b",
-                        border: "1px solid #334155",
-                        borderRadius: "12px",
-                      }}
-                    />
-                    <Legend />
-                    <Bar dataKey="company" fill="#00b386" name="Company" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="industry" fill="#3b82f6" name="Industry Avg" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {comparisonData && (
+                <div>
+                  <h3 className="text-lg text-[#1a1a1a] dark:text-white mb-3 pb-2 border-b border-[#e5e5e5] dark:border-[#334155]">
+                    Peer Comparison
+                  </h3>
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={comparisonData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" className="dark:stroke-[#334155]" />
+                      <XAxis dataKey="category" stroke="#737373" className="dark:stroke-[#94a3b8]" />
+                      <YAxis stroke="#737373" className="dark:stroke-[#94a3b8]" />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "#1e293b",
+                          border: "1px solid #334155",
+                          borderRadius: "12px",
+                        }}
+                      />
+                      <Legend />
+                      <Bar dataKey="company" fill="#00b386" name="Company" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="industry" fill="#3b82f6" name="Industry Avg" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
 
               {/* AI Explanation */}
               <div>

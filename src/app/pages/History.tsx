@@ -13,7 +13,13 @@ export default function History() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/applications")
+    const auth = localStorage.getItem("intelli-credit-auth");
+    const headers: Record<string, string> = {};
+    if (auth) {
+      try { headers["x-user-email"] = JSON.parse(auth).username; } catch (e) {}
+    }
+
+    fetch("http://localhost:8000/api/applications", { headers })
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setHistoryData(data);
@@ -34,8 +40,15 @@ export default function History() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this application?")) return;
     try {
+      const auth = localStorage.getItem("intelli-credit-auth");
+      const headers: Record<string, string> = {};
+      if (auth) {
+        try { headers["x-user-email"] = JSON.parse(auth).username; } catch (e) {}
+      }
+
       const res = await fetch(`http://localhost:8000/api/applications/${id}`, {
-        method: "DELETE"
+        method: "DELETE",
+        headers
       });
       if (res.ok) {
         setHistoryData(prev => prev.filter(app => app.id !== id));

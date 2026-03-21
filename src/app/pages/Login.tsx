@@ -1,46 +1,87 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import { Eye, EyeOff, Lock, User, Sparkles, Shield, Zap } from "lucide-react";
+import { supabase } from "../../supabase";
 import { motion } from "motion/react";
 
 export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [isSignUp, setIsSignUp] = useState(false); // New toggle state
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     username: "",
     password: "",
+    fullName: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
-    
-    setTimeout(() => {
-      const validCredentials = [
-        { username: "admin", password: "admin123" },
-        { username: "rajesh", password: "credit2026" },
-        { username: "officer", password: "intelli" },
-      ];
-      
-      const match = validCredentials.find(
-        c => c.username === formData.username.toLowerCase() && c.password === formData.password
-      );
-      
-      if (match) {
-        localStorage.setItem("intelli-credit-auth", JSON.stringify({
-          isLoggedIn: true,
-          username: match.username,
-          loginTime: new Date().toISOString(),
-        }));
-        navigate("/dashboard");
+
+    try {
+      if (isSignUp) {
+        // Explicit Sign Up Logic
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: formData.username,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.fullName
+            }
+          }
+        });
+
+        if (signUpError) {
+          setError(signUpError.message);
+          setLoading(false);
+          return;
+        }
+
+        if (signUpData.session) {
+          localStorage.setItem("intelli-credit-auth", JSON.stringify({
+            isLoggedIn: true,
+            username: formData.username,
+            fullName: formData.fullName || signUpData.session.user?.user_metadata?.full_name || "",
+            loginTime: new Date().toISOString(),
+            token: signUpData.session.access_token
+          }));
+          navigate("/dashboard");
+        } else {
+          setError("Account created! Please check your email for a confirmation link.");
+          setIsSignUp(false); // switch to login mode after successful signup step
+        }
       } else {
-        setError("Invalid username or password. Try admin / admin123");
-        setLoading(false);
+        // Explicit Sign In Logic
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: formData.username,
+          password: formData.password,
+        });
+
+        if (signInError) {
+          setError(signInError.message);
+          setLoading(false);
+          return;
+        }
+
+        if (signInData.session) {
+          localStorage.setItem("intelli-credit-auth", JSON.stringify({
+            isLoggedIn: true,
+            username: formData.username,
+            fullName: signInData.session.user?.user_metadata?.full_name || "",
+            loginTime: new Date().toISOString(),
+            token: signInData.session.access_token
+          }));
+          navigate("/dashboard");
+        }
       }
-    }, 800);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -84,19 +125,37 @@ export default function Login() {
               Intelli-Credit AI
             </h1>
             <p className="text-[#86948c] text-sm">
-              AI-Powered Credit Risk Analysis Platform
+              {isSignUp ? "Create a New Officer Account" : "AI-Powered Credit Risk Analysis Platform"}
             </p>
           </motion.div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Username */}
+            {/* Full Name (Only for Sign Up) */}
+            {isSignUp && (
+              <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} transition={{ delay: 0.1 }}>
+                <label className="block text-xs font-medium text-[#86948c] uppercase tracking-wider mb-2">Full Name</label>
+                <div className="relative group">
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3c4a43] group-focus-within:text-[#50ddad] transition-colors" />
+                  <input
+                    type="text"
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    className="w-full pl-11 pr-4 py-3 bg-[#060e20] border border-[#1e293b] rounded-xl focus:ring-2 focus:ring-[#50ddad]/30 focus:border-[#50ddad]/40 outline-none transition-all text-[#dae2fd] placeholder-[#3c4a43] text-sm"
+                    placeholder="E.g. Rajesh Kumar"
+                    required={isSignUp}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* Username/Email */}
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }}>
-              <label className="block text-xs font-medium text-[#86948c] uppercase tracking-wider mb-2">Username</label>
+              <label className="block text-xs font-medium text-[#86948c] uppercase tracking-wider mb-2">Email Address</label>
               <div className="relative group">
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#3c4a43] group-focus-within:text-[#50ddad] transition-colors" />
                 <input
-                  type="text"
+                  type="email"
                   value={formData.username}
                   onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                   className="w-full pl-11 pr-4 py-3 bg-[#060e20] border border-[#1e293b] rounded-xl focus:ring-2 focus:ring-[#50ddad]/30 focus:border-[#50ddad]/40 outline-none transition-all text-[#dae2fd] placeholder-[#3c4a43] text-sm"
@@ -140,18 +199,24 @@ export default function Login() {
               </motion.div>
             )}
 
-            {/* Remember & Forgot */}
+            {/* Remember & Forgot / Switch Mode */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="flex items-center justify-between text-sm">
               <label className="flex items-center cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded border-[#1e293b] bg-[#060e20] text-[#50ddad] focus:ring-[#50ddad]/30" />
-                <span className="ml-2 text-[#86948c]">Remember me</span>
+                {!isSignUp && (
+                  <>
+                    <input type="checkbox" className="w-4 h-4 rounded border-[#1e293b] bg-[#060e20] text-[#50ddad] focus:ring-[#50ddad]/30" />
+                    <span className="ml-2 text-[#86948c]">Remember me</span>
+                  </>
+                )}
               </label>
-              <a href="#" className="text-[#50ddad] hover:text-[#71fac8] font-medium transition-colors">
-                Forgot password?
-              </a>
+              {!isSignUp && (
+                <a href="#" className="text-[#50ddad] hover:text-[#71fac8] font-medium transition-colors">
+                  Forgot password?
+                </a>
+              )}
             </motion.div>
 
-            {/* Sign In Button */}
+            {/* Sign In / Sign Up Button */}
             <motion.button
               type="submit"
               initial={{ opacity: 0, y: 10 }}
@@ -162,24 +227,41 @@ export default function Login() {
               className="w-full py-3.5 bg-gradient-to-r from-[#50ddad] to-[#00b386] text-[#003828] rounded-xl font-semibold shadow-[0_8px_32px_rgba(0,179,134,0.3)] hover:shadow-[0_12px_40px_rgba(0,179,134,0.4)] transition-all disabled:opacity-60 cursor-pointer"
               disabled={loading}
             >
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "Processing..." : isSignUp ? "Create Account" : "Sign In"}
             </motion.button>
           </form>
 
-          {/* Divider */}
+          {/* Registration Toggle Divider */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[#1e293b]" />
             </div>
             <div className="relative flex justify-center text-xs">
               <span className="px-4 bg-[#131b2e]/80 text-[#3c4a43] uppercase tracking-widest">
-                For Credit Officers Only
+                {isSignUp ? "Already Registered?" : "New to Intelli-Credit?"}
               </span>
             </div>
           </div>
 
+          <div className="flex justify-center text-sm">
+            <button
+              type="button"
+              onClick={() => {
+                setIsSignUp(!isSignUp);
+                setError("");
+              }}
+              className="text-[#86948c] hover:text-[#dae2fd] transition-colors"
+            >
+              {isSignUp ? (
+                <>Already have an account? <span className="text-[#50ddad] font-semibold">Sign In here</span></>
+              ) : (
+                <>Don't have an officer ID? <span className="text-[#50ddad] font-semibold">Sign Up here</span></>
+              )}
+            </button>
+          </div>
+
           {/* Trust Indicators */}
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="flex items-center justify-center gap-6 text-[10px] text-[#3c4a43] uppercase tracking-wider">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="mt-8 flex items-center justify-center gap-6 text-[10px] text-[#3c4a43] uppercase tracking-wider">
             <span className="flex items-center gap-1.5"><Shield className="w-3.5 h-3.5 text-[#50ddad]" /> Secure</span>
             <span className="flex items-center gap-1.5"><Zap className="w-3.5 h-3.5 text-[#50ddad]" /> Enterprise</span>
             <span className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-[#50ddad]" /> AI-Powered</span>

@@ -28,8 +28,15 @@ export default function NewApplication() {
       return;
     }
     setFetchStatus("Fetching news and market data...");
+    
+    const auth = localStorage.getItem("intelli-credit-auth");
+    const headers: Record<string, string> = {};
+    if (auth) {
+      try { headers["x-user-email"] = JSON.parse(auth).username; } catch (e) {}
+    }
+
     try {
-      const res = await fetch(`http://localhost:8000/api/news?company=${encodeURIComponent(company)}`);
+      const res = await fetch(`http://localhost:8000/api/news?company=${encodeURIComponent(company)}`, { headers });
       const data = await res.json();
       if (data.news && data.news.length > 0) {
         setFetchStatus(`✅ Found ${data.news.length} news articles for ${company}`);
@@ -68,9 +75,16 @@ export default function NewApplication() {
     if (formData.gstFile) data.append("gst_file", formData.gstFile);
     if (formData.bankFile) data.append("bank_file", formData.bankFile);
 
+    const auth = localStorage.getItem("intelli-credit-auth");
+    const headers: Record<string, string> = {};
+    if (auth) {
+      try { headers["x-user-email"] = JSON.parse(auth).username; } catch (e) {}
+    }
+
     try {
       const response = await fetch("http://localhost:8000/api/analyze", {
         method: "POST",
+        headers,
         body: data,
       });
       const result = await response.json();
