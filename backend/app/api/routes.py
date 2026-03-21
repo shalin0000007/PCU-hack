@@ -101,6 +101,34 @@ def get_applications():
         })
     return apps
 
+@router.delete("/applications/{application_id}")
+def delete_application(application_id: str):
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    try:
+        # Get the application to find the company_id
+        app_res = supabase.table("applications").select("company_id").eq("id", application_id).execute()
+        if not app_res.data:
+            raise HTTPException(status_code=404, detail="Application not found")
+        company_id = app_res.data[0]["company_id"]
+        
+        # Delete related records first (cascade)
+        supabase.table("ai_risk_assessments").delete().eq("application_id", application_id).execute()
+        supabase.table("analysis_reports").delete().eq("application_id", application_id).execute()
+        supabase.table("applications").delete().eq("id", application_id).execute()
+        
+        # Check if company has any other applications
+        remaining = supabase.table("applications").select("id").eq("company_id", company_id).execute()
+        if not remaining.data:
+            supabase.table("companies").delete().eq("id", company_id).execute()
+        
+        return {"status": "deleted"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"Delete error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
 @router.post("/analyze")
 async def start_analysis(
     company_name: str = Form(...),
@@ -574,3 +602,113 @@ def chat_with_report(application_id: str, req: ChatRequest):
         context=context
     )
     return {"reply": response}
+
+@router.get("/report/{application_id}/pdf")
+def download_report(application_id: str):
+    """Generate a downloadable HTML report for an application."""
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Supabase not configured")
+    
+    app_res = supabase.table("applications").select("*, companies(name, industry)").eq("id", application_id).execute()
+    if not app_res.data:
+        raise HTTPException(status_code=404, detail="Application not found")
+    app = app_res.data[0]
+    company = app.get("companies") or {}
+    
+    report_res = supabase.table("analysis_reports").select("*").eq("application_id", application_id).order("created_at", desc=True).limit(1).execute()
+    report = report_res.data[0] if report_res.data else {}
+    
+    ai_res = supabase.table("ai_risk_assessments").select("*").eq("application_id", application_id).execute()
+    ai = ai_res.data[0] if ai_res.data else {}
+    
+    company_name = company.get("name", "Unknown")
+    industry = company.get("industry", "Unknown")
+    risk_score = ai.get("score") or report.get("risk_score", 0)
+    risk_level = ai.get("risk_level") or report.get("risk_level", "medium")
+    confidence = ai.get("confidence") or report.get("confidence_score", 0)
+    summary = ai.get("summary") or report.get("ai_summary", "No summary available.")
+    findings = ai.get("key_findings") or report.get("key_findings") or []
+    recommended = report.get("recommended_amount", 0)
+    loan_amount = app.get("loan_amount", 0)
+    
+    findings_html = ""
+    for f in findings:
+        if isinstance(f, dict):
+            desc = f.get("description") or f.get("text") or f.get("message", "")
+            ftype = f.get("type", "warning")
+            color = "#ef4444" if ftype == "error" else "#f59e0b" if ftype == "warning" else "#10b981"
+            findings_html += f'<div style="padding:12px;margin:8px 0;border-left:4px solid {color};background:#fafafa;border-radius:8px;"><span style="color:{color};font-weight:600;">●</span> {desc}</div>'
+    
+    risk_color = "#ef4444" if risk_level == "high" else "#f59e0b" if risk_level == "medium" else "#10b981"
+    
+    html = f"""<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Credit Risk Report - {company_name}</title>
+<style>
+body {{ font-family: 'Segoe UI', system-ui, sans-serif; margin:0; padding:40px; color:#1a1a1a; background:#fff; }}
+.header {{ text-align:center; border-bottom:2px solid #00b386; padding-bottom:24px; margin-bottom:32px; }}
+.header h1 {{ color:#00b386; margin:0 0 4px; font-size:28px; }}
+.header p {{ color:#737373; margin:0; font-size:14px; }}
+.section {{ margin-bottom:28px; }}
+.section h2 {{ color:#1a1a1a; font-size:18px; border-bottom:1px solid #e5e5e5; padding-bottom:8px; }}
+.grid {{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }}
+.card {{ background:#fafafa; padding:16px; border-radius:12px; border:1px solid #e5e5e5; }}
+.card label {{ font-size:11px; color:#737373; text-transform:uppercase; display:block; margin-bottom:4px; }}
+.card .value {{ font-size:16px; font-weight:600; color:#1a1a1a; }}
+.risk-badge {{ display:inline-block; padding:6px 20px; border-radius:100px; color:white; font-weight:600; font-size:14px; background:{risk_color}; }}
+.score {{ font-size:56px; font-weight:700; color:#1a1a1a; line-height:1; }}
+.summary {{ background:linear-gradient(135deg, #e5f7f3, #d1fae5); padding:20px; border-radius:12px; line-height:1.7; font-size:14px; }}
+.footer {{ text-align:center; margin-top:40px; padding-top:20px; border-top:2px solid #00b386; color:#737373; font-size:12px; }}
+@media print {{ body {{ padding:20px; }} }}
+</style></head><body>
+<div class="header">
+<h1>📊 Intelli-Credit AI</h1>
+<p>Credit Risk Analysis Report</p>
+<p style="font-size:12px;margin-top:8px;">Generated: {report.get("created_at", "N/A")[:10]}</p>
+</div>
+
+<div class="section">
+<h2>Company Information</h2>
+<div class="grid">
+<div class="card"><label>Company Name</label><div class="value">{company_name}</div></div>
+<div class="card"><label>Industry</label><div class="value">{industry}</div></div>
+<div class="card"><label>Application ID</label><div class="value">{application_id[:13]}...</div></div>
+<div class="card"><label>Loan Requested</label><div class="value">₹{loan_amount:,.0f}</div></div>
+</div>
+</div>
+
+<div class="section">
+<h2>Risk Assessment</h2>
+<div style="text-align:center;padding:20px;">
+<div class="score">{risk_score}</div>
+<div style="color:#737373;margin:4px 0 12px;">/100</div>
+<div class="risk-badge">{risk_level.upper()} RISK</div>
+<div style="margin-top:12px;color:#737373;">Confidence: {confidence}%</div>
+</div>
+</div>
+
+<div class="section">
+<h2>AI Analysis Summary</h2>
+<div class="summary">{summary}</div>
+</div>
+
+<div class="section">
+<h2>Key Findings</h2>
+{findings_html if findings_html else '<p style="color:#10b981;">✓ No significant risk flags detected.</p>'}
+</div>
+
+<div class="section">
+<h2>Final Recommendation</h2>
+<div class="grid">
+<div class="card"><label>Recommended Amount</label><div class="value" style="color:#00b386;">₹{recommended:,.0f}</div></div>
+<div class="card"><label>Approval Rate</label><div class="value">{round((recommended / loan_amount * 100) if loan_amount else 0)}% of requested</div></div>
+</div>
+</div>
+
+<div class="footer">
+<p>This report was auto-generated by Intelli-Credit AI Platform</p>
+<p>© 2026 Intelli-Credit AI. All rights reserved. Confidential.</p>
+</div>
+</body></html>"""
+    
+    from fastapi.responses import HTMLResponse
+    return HTMLResponse(content=html, media_type="text/html")
