@@ -92,3 +92,8 @@ def get_analysis_report(application_id: str):
         raise HTTPException(status_code=404, detail="Report not found")
         
     return report.data[0]
+
+@router.get("/news")
+def get_news(company: str):
+    news = fetch_company_news(company)
+    return {"company": company, "news": news}
