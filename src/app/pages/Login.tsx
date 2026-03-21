@@ -15,6 +15,7 @@ export default function Login() {
     password: "",
     fullName: "",
   });
+  const [success, setSuccess] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +80,27 @@ export default function Login() {
       }
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!formData.username) {
+      setError("Please enter your email address first.");
+      return;
+    }
+    setError("");
+    setSuccess("");
+    setLoading(true);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(formData.username, {
+        redirectTo: window.location.origin + "/reset-password",
+      });
+      if (resetError) throw resetError;
+      setSuccess("Password reset link sent! Check your inbox.");
+    } catch (err: any) {
+      setError(err.message || "Failed to send reset email.");
     } finally {
       setLoading(false);
     }
@@ -188,6 +210,17 @@ export default function Login() {
               </div>
             </motion.div>
 
+            {/* Success Message */}
+            {success && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 bg-[#10b981]/10 border border-[#10b981]/20 rounded-xl"
+              >
+                <p className="text-sm text-[#10b981] text-center">{success}</p>
+              </motion.div>
+            )}
+
             {/* Error */}
             {error && (
               <motion.div
@@ -210,9 +243,13 @@ export default function Login() {
                 )}
               </label>
               {!isSignUp && (
-                <a href="#" className="text-[#50ddad] hover:text-[#71fac8] font-medium transition-colors">
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  className="text-[#50ddad] hover:text-[#71fac8] font-medium transition-colors bg-transparent border-none cursor-pointer p-0"
+                >
                   Forgot password?
-                </a>
+                </button>
               )}
             </motion.div>
 
