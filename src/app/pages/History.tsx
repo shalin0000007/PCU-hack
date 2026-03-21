@@ -1,265 +1,266 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { ArrowLeft, Download, Eye, Trash2 } from "lucide-react";
+import {
+  Search,
+  Filter,
+  Download,
+  Eye,
+  CheckCircle,
+  XCircle,
+  Clock,
+  AlertTriangle,
+  FileText,
+  Calendar,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 import Layout from "../components/Layout";
+import { useAuth } from "../contexts/AuthContext";
 
-const dummyHistoryData = [
-  {
-    id: "APP-2024-001",
-    company: "TechVista Solutions Pvt Ltd",
-    riskScore: 72,
-    riskLevel: "low",
-    date: "2026-03-15",
-    status: "Approved",
-  },
-  {
-    id: "APP-2024-002",
-    company: "Global Exports & Trading Co",
-    riskScore: 56,
-    riskLevel: "medium",
-    date: "2026-03-12",
-    status: "Under Review",
-  },
-  {
-    id: "APP-2024-003",
-    company: "Urban Construction Ltd",
-    riskScore: 31,
-    riskLevel: "high",
-    date: "2026-03-10",
-    status: "Rejected",
-  },
-  {
-    id: "APP-2024-004",
-    company: "Fresh Farms Agriculture",
-    riskScore: 68,
-    riskLevel: "low",
-    date: "2026-03-08",
-    status: "Approved",
-  },
-  {
-    id: "APP-2024-005",
-    company: "Retail Chain Ventures",
-    riskScore: 45,
-    riskLevel: "medium",
-    date: "2026-03-05",
-    status: "Under Review",
-  },
-  {
-    id: "APP-2024-006",
-    company: "Innovative Software Labs",
-    riskScore: 78,
-    riskLevel: "low",
-    date: "2026-03-02",
-    status: "Approved",
-  },
-  {
-    id: "APP-2024-007",
-    company: "Metro Logistics Services",
-    riskScore: 52,
-    riskLevel: "medium",
-    date: "2026-02-28",
-    status: "Approved",
-  },
-  {
-    id: "APP-2024-008",
-    company: "Premier Manufacturing Inc",
-    riskScore: 38,
-    riskLevel: "high",
-    date: "2026-02-25",
-    status: "Rejected",
-  },
-];
+const API_URL = "http://localhost:8000/api";
 
 export default function History() {
   const navigate = useNavigate();
-  const [historyData, setHistoryData] = useState<any[]>(dummyHistoryData);
+  const { getAuthHeaders } = useAuth();
+  
+  const [applications, setApplications] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [riskFilter, setRiskFilter] = useState("all");
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/applications")
-      .then(res => res.json())
-      .then(data => {
+    const fetchHistory = async () => {
+      setIsLoading(true);
+      try {
+        const res = await fetch(`${API_URL}/applications`, {
+          headers: getAuthHeaders(),
+        });
+        const data = await res.json();
         if (Array.isArray(data)) {
-            setHistoryData([...data, ...dummyHistoryData]);
+          setApplications(data);
         }
-      })
-      .catch(err => console.error("Failed to fetch history:", err));
+      } catch (err) {
+        console.error("Failed to fetch history:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchHistory();
   }, []);
 
-  const handleDelete = async (id: string) => {
-    if (id.startsWith("APP-2024-")) {
-      setHistoryData(prev => prev.filter(app => app.id !== id));
-      return;
-    }
-    
-    try {
-      const res = await fetch(`http://localhost:8000/api/applications/${id}`, {
-        method: "DELETE"
-      });
-      if (res.ok) {
-        setHistoryData(prev => prev.filter(app => app.id !== id));
-      } else {
-        console.error("Failed to delete application from server");
-      }
-    } catch (err) {
-      console.error(err);
-    }
+  const filteredApplications = applications.filter((app) => {
+    const matchesSearch =
+      app.company?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.id?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus = statusFilter === "all" || app.status?.toLowerCase() === statusFilter;
+    const matchesRisk = riskFilter === "all" || app.riskLevel?.toLowerCase() === riskFilter;
+    return matchesSearch && matchesStatus && matchesRisk;
+  });
+
+  const stats = {
+    total: applications.length,
+    approved: applications.filter((a) => a.status?.toLowerCase() === "approved").length,
+    rejected: applications.filter((a) => a.status?.toLowerCase() === "rejected").length,
+    pending: applications.filter((a) => a.status?.toLowerCase() === "under review" || a.status?.toLowerCase() === "processing").length,
   };
 
   const getRiskColor = (level: string) => {
-    switch (level) {
+    switch (level?.toLowerCase()) {
       case "low":
-        return "text-[#10b981] bg-[#d1fae5] dark:bg-[#065f46] dark:text-[#86efac]";
+        return "text-emerald-700 bg-emerald-100";
       case "medium":
-        return "text-[#f59e0b] bg-[#fef3c7] dark:bg-[#78350f] dark:text-[#fcd34d]";
+        return "text-amber-700 bg-amber-100";
       case "high":
-        return "text-[#ef4444] bg-[#fee2e2] dark:bg-[#7f1d1d] dark:text-[#fca5a5]";
+        return "text-red-700 bg-red-100";
       default:
-        return "text-[#737373] bg-[#f5f5f5] dark:bg-[#334155] dark:text-[#94a3b8]";
+        return "text-slate-700 bg-slate-100";
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Approved":
-        return "text-[#10b981] bg-[#d1fae5] dark:bg-[#065f46] dark:text-[#86efac]";
-      case "Rejected":
-        return "text-[#ef4444] bg-[#fee2e2] dark:bg-[#7f1d1d] dark:text-[#fca5a5]";
-      case "Under Review":
-        return "text-[#f59e0b] bg-[#fef3c7] dark:bg-[#78350f] dark:text-[#fcd34d]";
+  const getStatusIcon = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "approved":
+        return <CheckCircle className="w-4 h-4 text-emerald-500" />;
+      case "rejected":
+        return <XCircle className="w-4 h-4 text-red-500" />;
+      case "flagged":
+        return <AlertTriangle className="w-4 h-4 text-red-500" />;
       default:
-        return "text-[#737373] bg-[#f5f5f5] dark:bg-[#334155] dark:text-[#94a3b8]";
+        return <Clock className="w-4 h-4 text-amber-500" />;
     }
   };
 
   return (
     <Layout>
-      <div className="p-6 space-y-6">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate("/dashboard")}
-            className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-[#334155] rounded-xl transition-colors border border-[#e5e5e5] dark:border-[#334155]"
-          >
-            <ArrowLeft className="w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
-          </button>
+      <div className="p-6 space-y-6 bg-surface min-h-screen">
+        {/* Header */}
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl text-[#1a1a1a] dark:text-white">Application History</h1>
-            <p className="text-sm text-[#737373] dark:text-[#94a3b8] mt-1">View all past credit risk assessments</p>
+            <h1 className="text-2xl font-bold text-on-surface font-headline">Application History</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              View and manage all your credit applications
+            </p>
+          </div>
+          <button className="flex items-center gap-2 px-4 py-2 border border-outline-variant text-on-surface rounded-xl hover:bg-surface-container-high transition-colors">
+            <Download className="w-4 h-4" />
+            Export
+          </button>
+        </div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {[
+            { label: "Total", value: stats.total, icon: FileText, color: "bg-primary/10 text-primary" },
+            { label: "Approved", value: stats.approved, icon: CheckCircle, color: "bg-emerald-100 text-emerald-600" },
+            { label: "Rejected", value: stats.rejected, icon: XCircle, color: "bg-red-100 text-red-600" },
+            { label: "Pending", value: stats.pending, icon: Clock, color: "bg-amber-100 text-amber-600" },
+          ].map((stat, idx) => (
+            <div
+              key={idx}
+              className="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/20 flex items-center gap-4"
+            >
+              <div className={`w-12 h-12 rounded-xl ${stat.color} flex items-center justify-center`}>
+                <stat.icon className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-on-surface font-headline">{stat.value}</p>
+                <p className="text-sm text-muted-foreground">{stat.label}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div className="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-outline-variant/20 flex flex-wrap items-center gap-4">
+          <div className="flex-1 min-w-[200px] relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by company or ID..."
+              className="w-full pl-10 pr-4 py-2.5 bg-surface-container border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2.5 bg-surface-container border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="all">All Status</option>
+              <option value="approved">Approved</option>
+              <option value="rejected">Rejected</option>
+              <option value="under review">Under Review</option>
+            </select>
+            <select
+              value={riskFilter}
+              onChange={(e) => setRiskFilter(e.target.value)}
+              className="px-3 py-2.5 bg-surface-container border border-outline-variant rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="all">All Risk</option>
+              <option value="low">Low Risk</option>
+              <option value="medium">Medium Risk</option>
+              <option value="high">High Risk</option>
+            </select>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#1e293b] rounded-[20px] shadow-lg border border-[#e5e5e5] dark:border-[#334155]">
-          <div className="p-6 border-b border-[#e5e5e5] dark:border-[#334155]">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-lg text-[#1a1a1a] dark:text-white">All Applications</h2>
-                <p className="text-sm text-[#737373] dark:text-[#94a3b8] mt-1">
-                  {historyData.length} total applications processed
-                </p>
-              </div>
-              <div className="flex gap-3">
-                <select className="px-4 py-2 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white">
-                  <option>All Status</option>
-                  <option>Approved</option>
-                  <option>Rejected</option>
-                  <option>Under Review</option>
-                </select>
-                <select className="px-4 py-2 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white">
-                  <option>All Risk Levels</option>
-                  <option>Low Risk</option>
-                  <option>Medium Risk</option>
-                  <option>High Risk</option>
-                </select>
-              </div>
+        {/* Table */}
+        <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden">
+          {isLoading ? (
+            <div className="p-12 text-center">
+              <Clock className="w-8 h-8 text-primary animate-pulse mx-auto mb-3" />
+              <p className="text-muted-foreground">Loading applications...</p>
             </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#e5e5e5] dark:border-[#334155]">
-                  <th className="px-6 py-4 text-left text-xs text-[#737373] dark:text-[#94a3b8] uppercase tracking-wider">
-                    Application ID
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs text-[#737373] dark:text-[#94a3b8] uppercase tracking-wider">
-                    Company Name
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs text-[#737373] dark:text-[#94a3b8] uppercase tracking-wider">
-                    Risk Score
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs text-[#737373] dark:text-[#94a3b8] uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs text-[#737373] dark:text-[#94a3b8] uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-xs text-[#737373] dark:text-[#94a3b8] uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#e5e5e5] dark:divide-[#334155]">
-                {historyData.map((app) => (
-                  <tr key={app.id} className="hover:bg-[#fafafa] dark:hover:bg-[#334155] transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-[#1a1a1a] dark:text-white">{app.id}</span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="text-sm text-[#1a1a1a] dark:text-white">{app.company}</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-[#1a1a1a] dark:text-white">{app.riskScore}</span>
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs ${getRiskColor(app.riskLevel)}`}
-                        >
-                          {app.riskLevel.charAt(0).toUpperCase() + app.riskLevel.slice(1)}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm text-[#737373] dark:text-[#94a3b8]">
-                        {new Date(app.date).toLocaleDateString("en-IN", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1 rounded-full text-xs ${getStatusColor(app.status)}`}>
-                        {app.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center gap-2">
+          ) : filteredApplications.length === 0 ? (
+            <div className="p-12 text-center">
+              <FileText className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+              <p className="text-lg font-medium text-on-surface mb-1">No applications found</p>
+              <p className="text-sm text-muted-foreground">
+                {searchQuery || statusFilter !== "all" || riskFilter !== "all"
+                  ? "Try adjusting your filters"
+                  : "Submit a new application to get started"}
+              </p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-surface-container-low">
+                  <tr>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Company
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Date
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Amount
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Risk Score
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Status
+                    </th>
+                    <th className="px-5 py-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-outline-variant/20">
+                  {filteredApplications.map((app) => (
+                    <tr key={app.id} className="hover:bg-surface-container-low transition-colors">
+                      <td className="px-5 py-4">
+                        <div>
+                          <p className="font-medium text-on-surface">{app.company}</p>
+                          <p className="text-xs text-muted-foreground">{app.id}</p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="w-4 h-4" />
+                          {app.date || "—"}
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 font-medium text-on-surface">{app.loanAmount}</td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          {app.riskScore > 50 ? (
+                            <TrendingDown className="w-4 h-4 text-red-500" />
+                          ) : (
+                            <TrendingUp className="w-4 h-4 text-emerald-500" />
+                          )}
+                          <span className="font-bold text-on-surface">{app.riskScore || "—"}</span>
+                          <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getRiskColor(app.riskLevel)}`}>
+                            {app.riskLevel || "pending"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          {getStatusIcon(app.status)}
+                          <span className="text-sm text-on-surface">{app.status}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
                         <button
                           onClick={() => navigate(`/credit-analysis/${app.id}`)}
-                          className="px-3 py-1.5 text-[#00b386] hover:bg-[#e5f7f3] dark:hover:bg-[#0f766e]/20 rounded-lg transition-colors flex items-center gap-1 text-sm"
+                          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                          title="View Details"
                         >
                           <Eye className="w-4 h-4" />
-                          View
                         </button>
-                        <button
-                          onClick={() => navigate(`/report/${app.id}`)}
-                          className="px-3 py-1.5 text-[#737373] dark:text-[#94a3b8] hover:bg-[#f5f5f5] dark:hover:bg-[#334155] rounded-lg transition-colors flex items-center gap-1 text-sm"
-                        >
-                          <Download className="w-4 h-4" />
-                          Report
-                        </button>
-                        <button
-                          onClick={() => handleDelete(app.id)}
-                          className="px-3 py-1.5 text-[#ef4444] hover:bg-[#fee2e2] dark:hover:bg-[#7f1d1d]/20 rounded-lg transition-colors flex items-center gap-1 text-sm"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </Layout>
