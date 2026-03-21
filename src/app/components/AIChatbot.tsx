@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Send, Sparkles } from "lucide-react";
+import { MessageCircle, X, Send, Sparkles } from "lucide-react";
 
 const suggestedQueries = [
   "Why is the risk score high?",
@@ -50,7 +50,7 @@ export default function AIChatbot() {
       console.error(err);
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Sorry, I am having trouble connecting to the server." }
+        { role: "assistant", content: "Sorry, I am having trouble connecting to the Fastrouter server." }
       ]);
     }
   };
@@ -64,28 +64,28 @@ export default function AIChatbot() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-tertiary hover:bg-tertiary/90 text-tertiary-foreground rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center z-50"
+          className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-br from-[#00b386] to-[#059669] text-white rounded-full shadow-lg hover:shadow-xl transition-all flex items-center justify-center z-50"
         >
-          <Sparkles className="w-6 h-6" />
+          <MessageCircle className="w-6 h-6" />
         </button>
       )}
 
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 bg-surface-container-lowest rounded-2xl shadow-[0_12px_32px_rgba(42,52,57,0.15)] z-50 flex flex-col max-h-[600px] overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-outline-variant/20 bg-primary">
-            <div className="flex items-center gap-2 text-primary-foreground">
+        <div className="fixed bottom-6 right-6 w-96 bg-white rounded-[20px] shadow-2xl border border-[#e5e5e5] z-50 flex flex-col max-h-[600px]">
+          <div className="flex items-center justify-between p-4 border-b border-[#e5e5e5] bg-gradient-to-r from-[#00b386] to-[#059669] rounded-t-[20px]">
+            <div className="flex items-center gap-2 text-white">
               <Sparkles className="w-5 h-5" />
-              <h3 className="font-semibold font-['Manrope']">AI Assistant</h3>
+              <h3 className="font-medium">AI Assistant</h3>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-white/10 rounded-lg p-1 transition-colors"
+              className="text-white hover:bg-white/20 rounded-lg p-1 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-surface-container-low">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((msg, idx) => (
               <div
                 key={idx}
@@ -94,25 +94,25 @@ export default function AIChatbot() {
                 <div
                   className={`max-w-[80%] rounded-xl p-3 ${
                     msg.role === "user"
-                      ? "bg-tertiary text-tertiary-foreground"
-                      : "bg-surface-container-lowest text-foreground shadow-sm"
+                      ? "bg-[#00b386] text-white"
+                      : "bg-[#f5f5f5] text-[#1a1a1a]"
                   }`}
                 >
-                  <p className="text-sm leading-relaxed whitespace-pre-wrap font-['Inter']">{msg.content}</p>
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 </div>
               </div>
             ))}
           </div>
 
           {messages.length === 1 && (
-            <div className="px-4 pb-4 bg-surface-container-low space-y-2">
-              <p className="text-xs text-muted-foreground font-['Inter']">Suggested questions:</p>
+            <div className="px-4 pb-4 space-y-2">
+              <p className="text-xs text-[#737373]">Suggested questions:</p>
               <div className="grid grid-cols-1 gap-2">
                 {suggestedQueries.map((query, idx) => (
                   <button
                     key={idx}
                     onClick={() => handleSuggestedQuery(query)}
-                    className="text-left px-3 py-2 bg-tertiary-container text-on-tertiary-container rounded-lg hover:bg-tertiary-container/80 transition-colors text-xs font-semibold font-['Inter']"
+                    className="text-left px-3 py-2 bg-[#e5f7f3] text-[#00b386] rounded-lg hover:bg-[#d1fae5] transition-colors text-xs"
                   >
                     {query}
                   </button>
@@ -121,7 +121,7 @@ export default function AIChatbot() {
             </div>
           )}
 
-          <div className="p-4 border-t border-outline-variant/20 bg-surface-container-lowest">
+          <div className="p-4 border-t border-[#e5e5e5]">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -129,11 +129,11 @@ export default function AIChatbot() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 placeholder="Ask me anything..."
-                className="flex-1 px-4 py-2.5 bg-surface-container-low border border-outline-variant/30 rounded-xl text-sm text-foreground placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-['Inter']"
+                className="flex-1 px-4 py-2 bg-[#f5f5f5] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent"
               />
               <button
                 onClick={handleSendMessage}
-                className="px-4 py-2.5 bg-tertiary hover:bg-tertiary/90 text-tertiary-foreground rounded-xl transition-colors"
+                className="px-4 py-2 bg-gradient-to-r from-[#00b386] to-[#059669] text-white rounded-xl hover:shadow-lg transition-all"
               >
                 <Send className="w-4 h-4" />
               </button>

@@ -4,8 +4,3 @@ dist/
 *.local
 .env
 .env.*
-
-# Backend and data files
-backend/
-*.csv
-*.py

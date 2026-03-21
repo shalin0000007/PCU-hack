@@ -1,33 +1,34 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-import {
-  Building2,
-  ChevronDown,
-  FileText,
-  Landmark,
-  Shield,
-  MessageSquare,
-  Sparkles,
-  RefreshCw,
-} from "lucide-react";
+import { ArrowLeft, Upload, Database, FileSpreadsheet, Building2 } from "lucide-react";
 import Layout from "../components/Layout";
 
 export default function NewApplication() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     companyName: "",
-    industry: "Technology & Infrastructure",
-    taxRegistration: "",
-    loanAmount: "0.00",
-    purpose: "Working Capital",
+    industry: "",
+    loanAmount: "",
+    purpose: "",
     gstFile: null as File | null,
     bankFile: null as File | null,
+    externalCompany: "",
   });
-
-  const [applicationIntegrity, setApplicationIntegrity] = useState(94);
 
   const handleFileChange = (field: "gstFile" | "bankFile", file: File | null) => {
     setFormData({ ...formData, [field]: file });
+  };
+
+  const handleUseSampleData = () => {
+    setFormData({
+      companyName: "TechVista Solutions Pvt Ltd",
+      industry: "Information Technology",
+      loanAmount: "5000000",
+      purpose: "Business expansion and equipment purchase",
+      gstFile: null,
+      bankFile: null,
+      externalCompany: "TechVista Solutions",
+    });
   };
 
   const handleStartAnalysis = async () => {
@@ -41,6 +42,7 @@ export default function NewApplication() {
     data.append("industry", formData.industry);
     data.append("loan_amount", formData.loanAmount.toString());
     data.append("purpose", formData.purpose);
+    if (formData.externalCompany) data.append("external_company", formData.externalCompany);
     if (formData.gstFile) data.append("gst_file", formData.gstFile);
     if (formData.bankFile) data.append("bank_file", formData.bankFile);
 
@@ -58,332 +60,188 @@ export default function NewApplication() {
       }
     } catch (err) {
       console.error("Analysis Error:", err);
-      alert("Failed to connect to the server. Please try again later.");
+      alert("Failed to connect to the backend server. Please make sure the FastAPI server is running.");
     }
   };
 
   return (
     <Layout>
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/dashboard")}
+            className="w-10 h-10 flex items-center justify-center hover:bg-white dark:hover:bg-[#334155] rounded-xl transition-colors border border-[#e5e5e5] dark:border-[#334155]"
+          >
+            <ArrowLeft className="w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
+          </button>
           <div>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1 font-['Inter'] uppercase tracking-wider">
-              <span>Applications</span>
-              <span>›</span>
-              <span className="text-foreground">New Credit Request</span>
-            </div>
-            <h1 className="text-3xl font-bold text-foreground tracking-tight font-['Manrope']">Initiate New Credit Application</h1>
-            <p className="text-muted-foreground mt-1 font-['Inter']">
-              Systematic onboarding for corporate credit facilities. Ensure all data pillars are populated
-              for the Sovereign Analysis engine.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-tertiary-container rounded-full">
-            <div className="w-2 h-2 bg-tertiary rounded-full animate-pulse" />
-            <span className="text-sm font-semibold text-on-tertiary-container font-['Inter']">Analysis Engine: Ready</span>
+            <h1 className="text-2xl text-[#1a1a1a] dark:text-white">New Loan Application</h1>
+            <p className="text-sm text-[#737373] dark:text-[#94a3b8] mt-1">Enter company details and upload financial data</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
-          {/* Main Form Column */}
-          <div className="col-span-2 space-y-6">
-            {/* Company Profile Section */}
-            <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-[0_12px_32px_rgba(42,52,57,0.06)]">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-tertiary-container rounded-xl flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-tertiary" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-foreground font-['Manrope']">Company Profile</h2>
-                  <p className="text-sm text-muted-foreground font-['Inter']">Legal entity identity and operational context</p>
-                </div>
+        <div className="bg-white dark:bg-[#1e293b] rounded-[20px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-8">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b border-[#e5e5e5] dark:border-[#334155]">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#e5f7f3] to-[#d1fae5] dark:from-[#0f766e] dark:to-[#065f46] rounded-xl flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-[#00b386]" />
               </div>
-
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-outline-variant uppercase tracking-wider font-['Inter']">
-                    Company Name
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.companyName}
-                    onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
-                    placeholder="Enter legal business name"
-                    className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-foreground placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-['Inter']"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-outline-variant uppercase tracking-wider font-['Inter']">
-                    Industry Sector
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={formData.industry}
-                      onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-                      className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-['Inter']"
-                    >
-                      <option>Technology & Infrastructure</option>
-                      <option>Manufacturing</option>
-                      <option>Retail & E-commerce</option>
-                      <option>Financial Services</option>
-                      <option>Healthcare</option>
-                      <option>Real Estate</option>
-                    </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-outline-variant" />
-                  </div>
-                </div>
-
-                <div className="col-span-2 space-y-2">
-                  <label className="text-xs font-semibold text-outline-variant uppercase tracking-wider font-['Inter']">
-                    Tax Registration (GST/VAT)
-                  </label>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      value={formData.taxRegistration}
-                      onChange={(e) => setFormData({ ...formData, taxRegistration: e.target.value })}
-                      placeholder="e.g. 27AAAAA0000A1Z5"
-                      className="flex-1 px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-foreground placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-['Inter']"
-                    />
-                    <button className="px-5 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-sm font-semibold text-foreground hover:bg-surface-container transition-colors font-['Inter']">
-                      Verify Entity
-                    </button>
-                  </div>
-                </div>
+              <div>
+                <h2 className="text-lg text-[#1a1a1a] dark:text-white">Company Information</h2>
+                <p className="text-sm text-[#737373] dark:text-[#94a3b8]">Basic details about the applicant company</p>
               </div>
             </div>
 
-            {/* Financial Parameters Section */}
-            <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-[0_12px_32px_rgba(42,52,57,0.06)]">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 bg-secondary-container rounded-xl flex items-center justify-center">
-                  <Landmark className="w-5 h-5 text-secondary" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-foreground font-['Manrope']">Financial Parameters</h2>
-                  <p className="text-sm text-muted-foreground font-['Inter']">Defining the scope and intent of the credit facility</p>
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm text-[#1a1a1a] dark:text-white">Company Name</label>
+                <input
+                  type="text"
+                  value={formData.companyName}
+                  onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+                  placeholder="Enter company name"
+                  className="w-full px-4 py-3 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent transition-all text-[#1a1a1a] dark:text-white placeholder:text-[#737373] dark:placeholder:text-[#94a3b8]"
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-outline-variant uppercase tracking-wider font-['Inter']">
-                    Loan Amount Requested
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                    <input
-                      type="text"
-                      value={formData.loanAmount}
-                      onChange={(e) => setFormData({ ...formData, loanAmount: e.target.value })}
-                      placeholder="0.00"
-                      className="w-full pl-8 pr-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-foreground placeholder:text-outline-variant focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-['Inter']"
-                    />
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <label className="text-sm text-[#1a1a1a] dark:text-white">Industry</label>
+                <select
+                  value={formData.industry}
+                  onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+                  className="w-full px-4 py-3 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent transition-all text-[#1a1a1a] dark:text-white"
+                >
+                  <option value="">Select industry</option>
+                  <option value="Information Technology">Information Technology</option>
+                  <option value="Manufacturing">Manufacturing</option>
+                  <option value="Retail">Retail</option>
+                  <option value="Construction">Construction</option>
+                  <option value="Agriculture">Agriculture</option>
+                  <option value="Healthcare">Healthcare</option>
+                  <option value="Education">Education</option>
+                </select>
+              </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-semibold text-outline-variant uppercase tracking-wider font-['Inter']">
-                    Facility Purpose
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={formData.purpose}
-                      onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-                      className="w-full px-4 py-3 bg-surface-container-low border border-outline-variant/30 rounded-xl text-foreground appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-['Inter']"
-                    >
-                      <option>Working Capital</option>
-                      <option>Equipment Purchase</option>
-                      <option>Business Expansion</option>
-                      <option>Debt Consolidation</option>
-                      <option>Real Estate</option>
-                    </select>
-                    <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-outline-variant" />
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <label className="text-sm text-[#1a1a1a] dark:text-white">Loan Amount (₹)</label>
+                <input
+                  type="number"
+                  value={formData.loanAmount}
+                  onChange={(e) => setFormData({ ...formData, loanAmount: e.target.value })}
+                  placeholder="Enter loan amount"
+                  className="w-full px-4 py-3 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent transition-all text-[#1a1a1a] dark:text-white placeholder:text-[#737373] dark:placeholder:text-[#94a3b8]"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm text-[#1a1a1a] dark:text-white">Purpose</label>
+                <input
+                  type="text"
+                  value={formData.purpose}
+                  onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
+                  placeholder="Purpose of loan"
+                  className="w-full px-4 py-3 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent transition-all text-[#1a1a1a] dark:text-white placeholder:text-[#737373] dark:placeholder:text-[#94a3b8]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 pb-4 border-b border-[#e5e5e5] dark:border-[#334155]">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#dbeafe] to-[#bfdbfe] dark:from-[#1e3a8a] dark:to-[#1e40af] rounded-xl flex items-center justify-center">
+                <Upload className="w-5 h-5 text-[#3b82f6]" />
+              </div>
+              <div>
+                <h2 className="text-lg text-[#1a1a1a] dark:text-white">Data Upload</h2>
+                <p className="text-sm text-[#737373] dark:text-[#94a3b8]">Upload GST and bank statement CSV files</p>
               </div>
             </div>
 
-            {/* AI Assistant Bar */}
-            <div className="bg-gradient-to-r from-surface-container-low to-tertiary-container/30 rounded-2xl p-4 border border-outline-variant/20">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-tertiary to-tertiary/80 rounded-xl flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-tertiary-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-semibold text-foreground font-['Manrope']">AI Assistant is monitoring input quality...</p>
-                    <p className="text-xs text-muted-foreground font-['Inter']">Automated parsing of financial documents</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground font-['Inter']">
-                    <span className="w-1.5 h-1.5 bg-outline-variant rounded-full" />
-                    GUIDANCE
-                  </button>
-                  <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground font-['Inter']">
-                    <RefreshCw className="w-4 h-4" />
-                    SIMILAR DEALS
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Document Upload Section */}
-            <div className="grid grid-cols-2 gap-6">
-              {/* GST Returns */}
-              <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-[0_12px_32px_rgba(42,52,57,0.06)]">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-12 h-12 bg-secondary-container rounded-xl flex items-center justify-center mb-4">
-                    <FileText className="w-6 h-6 text-secondary" />
-                  </div>
-                  <h3 className="font-bold text-foreground mb-1 font-['Manrope']">GST Returns</h3>
-                  <p className="text-xs text-muted-foreground mb-4 font-['Inter']">Latest 12 Months (PDF/JSON)</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm text-[#1a1a1a] dark:text-white">GST Returns (CSV)</label>
+                <div className="relative">
                   <input
                     type="file"
-                    accept=".csv,.pdf,.json"
+                    accept=".csv"
                     onChange={(e) => handleFileChange("gstFile", e.target.files?.[0] || null)}
                     className="hidden"
                     id="gst-upload"
                   />
                   <label
                     htmlFor="gst-upload"
-                    className="px-4 py-2 text-sm font-semibold text-tertiary hover:text-tertiary/80 cursor-pointer font-['Inter']"
+                    className="flex items-center gap-3 px-4 py-4 bg-[#f5f5f5] dark:bg-[#334155] border-2 border-dashed border-[#e5e5e5] dark:border-[#475569] rounded-xl cursor-pointer hover:border-[#00b386] hover:bg-[#e5f7f3] dark:hover:bg-[#0f766e]/20 transition-all"
                   >
-                    {formData.gstFile ? formData.gstFile.name : "BROWSE FILES"}
+                    <FileSpreadsheet className="w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
+                    <span className="text-sm text-[#737373] dark:text-[#94a3b8]">
+                      {formData.gstFile ? formData.gstFile.name : "Choose GST CSV file"}
+                    </span>
                   </label>
                 </div>
               </div>
 
-              {/* Bank Statements */}
-              <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-[0_12px_32px_rgba(42,52,57,0.06)]">
-                <div className="flex flex-col items-center text-center">
-                  <div className="w-12 h-12 bg-tertiary-container rounded-xl flex items-center justify-center mb-4">
-                    <Landmark className="w-6 h-6 text-tertiary" />
-                  </div>
-                  <h3 className="font-bold text-foreground mb-1 font-['Manrope']">Bank Statements</h3>
-                  <p className="text-xs text-muted-foreground mb-4 font-['Inter']">All Primary Accounts (e-Statements)</p>
+              <div className="space-y-2">
+                <label className="text-sm text-[#1a1a1a] dark:text-white">Bank Statements (CSV)</label>
+                <div className="relative">
                   <input
                     type="file"
-                    accept=".csv,.pdf"
+                    accept=".csv"
                     onChange={(e) => handleFileChange("bankFile", e.target.files?.[0] || null)}
                     className="hidden"
                     id="bank-upload"
                   />
                   <label
                     htmlFor="bank-upload"
-                    className="px-4 py-2 text-sm font-semibold text-tertiary hover:text-tertiary/80 cursor-pointer font-['Inter']"
+                    className="flex items-center gap-3 px-4 py-4 bg-[#f5f5f5] dark:bg-[#334155] border-2 border-dashed border-[#e5e5e5] dark:border-[#475569] rounded-xl cursor-pointer hover:border-[#00b386] hover:bg-[#e5f7f3] dark:hover:bg-[#0f766e]/20 transition-all"
                   >
-                    {formData.bankFile ? formData.bankFile.name : "CONNECT BANK"}
+                    <FileSpreadsheet className="w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
+                    <span className="text-sm text-[#737373] dark:text-[#94a3b8]">
+                      {formData.bankFile ? formData.bankFile.name : "Choose Bank CSV file"}
+                    </span>
                   </label>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Right Sidebar */}
           <div className="space-y-6">
-            {/* Data Enrichment Panel */}
-            <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-[0_12px_32px_rgba(42,52,57,0.06)]">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-bold text-foreground font-['Manrope']">DATA ENRICHMENT</h3>
-                <Sparkles className="w-4 h-4 text-outline-variant" />
+            <div className="flex items-center gap-3 pb-4 border-b border-[#e5e5e5] dark:border-[#334155]">
+              <div className="w-10 h-10 bg-gradient-to-br from-[#fef3c7] to-[#fde68a] dark:from-[#78350f] dark:to-[#92400e] rounded-xl flex items-center justify-center">
+                <Database className="w-5 h-5 text-[#f59e0b]" />
               </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-error-container rounded-lg flex items-center justify-center">
-                      <Shield className="w-4 h-4 text-error" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground font-['Manrope']">Credit Bureau</p>
-                      <p className="text-xs text-muted-foreground font-['Inter']">EQUIFAX / EXPERIAN</p>
-                    </div>
-                  </div>
-                  <RefreshCw className="w-4 h-4 text-outline-variant cursor-pointer hover:text-tertiary" />
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-secondary-container rounded-lg flex items-center justify-center">
-                      <Shield className="w-4 h-4 text-secondary" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground font-['Manrope']">Legal Check</p>
-                      <p className="text-xs text-muted-foreground font-['Inter']">JUDICIAL RECORDS HUB</p>
-                    </div>
-                  </div>
-                  <RefreshCw className="w-4 h-4 text-outline-variant cursor-pointer hover:text-tertiary" />
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-surface-container-low rounded-xl">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                      <MessageSquare className="w-4 h-4 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground font-['Manrope']">Social Sentinel</p>
-                      <p className="text-xs text-muted-foreground font-['Inter']">SENTIMENT ANALYSIS</p>
-                    </div>
-                  </div>
-                  <RefreshCw className="w-4 h-4 text-outline-variant cursor-pointer hover:text-tertiary" />
-                </div>
+              <div>
+                <h2 className="text-lg text-[#1a1a1a] dark:text-white">External Data</h2>
+                <p className="text-sm text-[#737373] dark:text-[#94a3b8]">Fetch additional data from external sources</p>
               </div>
             </div>
 
-            {/* External Signals */}
-            <div className="bg-surface-container-lowest rounded-2xl p-6 shadow-[0_12px_32px_rgba(42,52,57,0.06)]">
-              <h3 className="font-bold text-foreground mb-4 font-['Manrope']">EXTERNAL SIGNALS</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-surface-container-low rounded-xl text-center">
-                  <p className="text-2xl font-bold text-foreground font-['Manrope']">742</p>
-                  <p className="text-xs text-muted-foreground uppercase font-['Inter']">Bureau Score</p>
-                </div>
-                <div className="p-4 bg-surface-container-low rounded-xl text-center">
-                  <p className="text-2xl font-bold text-tertiary font-['Manrope']">Clean</p>
-                  <p className="text-xs text-muted-foreground uppercase font-['Inter']">Lien Status</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Finalize Application */}
-            <div className="bg-primary rounded-2xl p-6 text-primary-foreground">
-              <h3 className="font-bold mb-2 font-['Manrope']">Finalize Application</h3>
-              <p className="text-sm text-primary-foreground/80 mb-4 font-['Inter']">
-                Execute full algorithmic risk profiling based on 142 integrated data points.
-              </p>
-
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-primary-foreground/80 font-['Inter']">Application Integrity</span>
-                  <span className="text-sm font-semibold text-tertiary-foreground">{applicationIntegrity}%</span>
-                </div>
-                <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-tertiary rounded-full transition-all"
-                    style={{ width: `${applicationIntegrity}%` }}
-                  />
-                </div>
-              </div>
-
-              <button
-                onClick={handleStartAnalysis}
-                className="w-full py-3 bg-tertiary hover:bg-tertiary/90 text-tertiary-foreground rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 font-['Inter']"
-              >
-                <Sparkles className="w-4 h-4" />
-                Start Analysis
+            <div className="flex gap-4">
+              <input
+                type="text"
+                value={formData.externalCompany}
+                onChange={(e) => setFormData({ ...formData, externalCompany: e.target.value })}
+                placeholder="Enter company name for external data"
+                className="flex-1 px-4 py-3 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent transition-all text-[#1a1a1a] dark:text-white placeholder:text-[#737373] dark:placeholder:text-[#94a3b8]"
+              />
+              <button className="px-6 py-3 bg-white dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] text-[#1a1a1a] dark:text-white rounded-xl hover:border-[#00b386] hover:text-[#00b386] transition-all">
+                Fetch Data
               </button>
-
-              <button className="w-full py-3 mt-3 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-semibold transition-colors font-['Inter']">
-                Save as Draft
-              </button>
-
-              <p className="text-xs text-primary-foreground/60 text-center mt-4 font-['Inter']">
-                Analysis typically completes in &lt; 60 seconds
-              </p>
             </div>
+          </div>
+
+          <div className="flex gap-4 pt-6 border-t border-[#e5e5e5] dark:border-[#334155]">
+            <button
+              onClick={handleUseSampleData}
+              className="px-6 py-3 bg-white dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] text-[#1a1a1a] dark:text-white rounded-xl hover:border-[#00b386] hover:text-[#00b386] transition-all"
+            >
+              Use Sample Data
+            </button>
+            <button
+              onClick={handleStartAnalysis}
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-[#00b386] to-[#059669] text-white rounded-xl hover:shadow-lg transition-all duration-200"
+            >
+              Start Analysis →
+            </button>
           </div>
         </div>
       </div>
