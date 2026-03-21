@@ -1,0 +1,11 @@
+﻿* 7475095 Add backend and remaining files
+* 7124b59 feat: initial frontend launch
+* fe5987a Implement secure login functionality with Supabase and SQLite fallback
+| * 0859674 ai report generation implemented
+| * eaf4280 ai report generation done
+| * 39ea7ac report fix and news fixed
+| * c7a9a3e database connected delete button added
+|/  
+* e8ee2b0 news Done
+* ce21450 Backend Added
+* 00d0544 Initial commit: Intelli-Credit AI - Fintech Web App UI Design
