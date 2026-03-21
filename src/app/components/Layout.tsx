@@ -5,15 +5,12 @@ import {
   FileText,
   BarChart3,
   FileOutput,
-  History,
   Settings,
   Search,
   Bell,
-  User,
-  Moon,
-  Sun,
+  HelpCircle,
+  CreditCard,
 } from "lucide-react";
-import { useTheme } from "../contexts/ThemeContext";
 
 interface LayoutProps {
   children: ReactNode;
@@ -22,14 +19,12 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isDarkMode, toggleTheme } = useTheme();
 
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
-    { icon: FileText, label: "New Application", path: "/new-application" },
-    { icon: BarChart3, label: "Analysis", path: "/analysis" },
+    { icon: FileText, label: "Applications", path: "/history" },
+    { icon: BarChart3, label: "Risk Analysis", path: "/analysis" },
     { icon: FileOutput, label: "Reports", path: "/reports" },
-    { icon: History, label: "History", path: "/history" },
     { icon: Settings, label: "Settings", path: "/settings" },
   ];
 
@@ -40,109 +35,108 @@ export default function Layout({ children }: LayoutProps) {
     if (path === "/reports") {
       return location.pathname.includes("/report");
     }
+    if (path === "/history") {
+      return location.pathname === "/history" || location.pathname === "/new-application";
+    }
     return location.pathname === path;
   };
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? "dark" : ""}`}>
-      <div className="min-h-screen bg-[#fafafa] dark:bg-[#0f172a] transition-colors duration-300">
-        {/* Sidebar */}
-        <aside className="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-[#1e293b] border-r border-[#e5e5e5] dark:border-[#334155] transition-colors duration-300 z-30">
-          <div className="p-6 border-b border-[#e5e5e5] dark:border-[#334155]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#00b386] to-[#059669] rounded-xl flex items-center justify-center">
-                <BarChart3 className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className="text-lg text-[#1a1a1a] dark:text-white">Intelli-Credit</h2>
-                <p className="text-xs text-[#737373] dark:text-[#94a3b8]">AI Platform</p>
-              </div>
-            </div>
+    <div className="min-h-screen bg-surface">
+      {/* Sidebar */}
+      <aside className="fixed left-0 top-0 h-screen w-64 bg-slate-50 dark:bg-slate-900 flex flex-col p-4 gap-y-2 z-50">
+        {/* Logo */}
+        <div className="mb-8 px-2 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center">
+            <CreditCard className="w-5 h-5 text-primary-foreground" />
           </div>
-
-          <nav className="p-4 space-y-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
-              return (
-                <button
-                  key={item.path}
-                  onClick={() => navigate(item.path)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                    active
-                      ? "bg-gradient-to-r from-[#00b386] to-[#059669] text-white shadow-lg"
-                      : "text-[#737373] dark:text-[#94a3b8] hover:bg-[#f5f5f5] dark:hover:bg-[#334155]"
-                  }`}
-                >
-                  <Icon className="w-5 h-5" />
-                  <span className="text-sm">{item.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-
-          <div className="absolute bottom-6 left-4 right-4">
-            <div className="bg-gradient-to-br from-[#e5f7f3] to-[#d1fae5] dark:from-[#0f766e] dark:to-[#065f46] p-4 rounded-xl">
-              <p className="text-xs text-[#1a1a1a] dark:text-white mb-1">AI Assistant</p>
-              <p className="text-[10px] text-[#737373] dark:text-[#94a3b8]">24/7 Available</p>
-            </div>
+          <div>
+            <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100 tracking-tighter font-['Manrope']">Intelli-Credit</h1>
+            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Portfolio Intelligence</p>
           </div>
-        </aside>
-
-        {/* Main Content */}
-        <div className="ml-64">
-          {/* Top Bar */}
-          <header className="sticky top-0 h-16 bg-white/80 dark:bg-[#1e293b]/80 backdrop-blur-md border-b border-[#e5e5e5] dark:border-[#334155] z-20 transition-colors duration-300">
-            <div className="h-full px-6 flex items-center justify-between">
-              {/* Search */}
-              <div className="flex-1 max-w-xl">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
-                  <input
-                    type="text"
-                    placeholder="Search applications, companies..."
-                    className="w-full pl-10 pr-4 py-2 bg-[#f5f5f5] dark:bg-[#334155] border border-transparent dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] text-sm text-[#1a1a1a] dark:text-white placeholder:text-[#737373] dark:placeholder:text-[#94a3b8] transition-all"
-                  />
-                </div>
-              </div>
-
-              {/* Right Section */}
-              <div className="flex items-center gap-4">
-                {/* Notifications */}
-                <button className="relative w-10 h-10 flex items-center justify-center hover:bg-[#f5f5f5] dark:hover:bg-[#334155] rounded-xl transition-colors">
-                  <Bell className="w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
-                  <span className="absolute top-2 right-2 w-2 h-2 bg-[#ef4444] rounded-full"></span>
-                </button>
-
-                {/* Dark Mode Toggle */}
-                <button
-                  onClick={toggleTheme}
-                  className="w-10 h-10 flex items-center justify-center hover:bg-[#f5f5f5] dark:hover:bg-[#334155] rounded-xl transition-colors"
-                >
-                  {isDarkMode ? (
-                    <Sun className="w-5 h-5 text-[#f59e0b]" />
-                  ) : (
-                    <Moon className="w-5 h-5 text-[#737373]" />
-                  )}
-                </button>
-
-                {/* User Profile */}
-                <button className="flex items-center gap-3 px-3 py-2 hover:bg-[#f5f5f5] dark:hover:bg-[#334155] rounded-xl transition-colors">
-                  <div className="w-8 h-8 bg-gradient-to-br from-[#00b386] to-[#059669] rounded-lg flex items-center justify-center">
-                    <User className="w-5 h-5 text-white" />
-                  </div>
-                  <div className="text-left">
-                    <p className="text-sm text-[#1a1a1a] dark:text-white">Rajesh Kumar</p>
-                    <p className="text-xs text-[#737373] dark:text-[#94a3b8]">Credit Officer</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </header>
-
-          {/* Page Content */}
-          <main>{children}</main>
         </div>
+
+        {/* Navigation */}
+        <nav className="flex-1 space-y-1">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.path);
+            return (
+              <button
+                key={item.path}
+                onClick={() => navigate(item.path)}
+                className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                  active
+                    ? "text-slate-900 dark:text-white font-semibold bg-white dark:bg-slate-800 shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-200/50 dark:hover:bg-slate-800/80"
+                }`}
+              >
+                <Icon className="w-5 h-5" />
+                <span className="font-['Manrope'] font-medium text-sm tracking-tight">{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Bottom Section */}
+        <div className="mt-auto p-4 bg-slate-100 dark:bg-slate-800/50 rounded-2xl flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-tertiary flex items-center justify-center">
+              <span className="text-tertiary-foreground font-bold text-xs">GF</span>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-foreground">Global FinCorp</p>
+              <p className="text-[10px] text-muted-foreground">Enterprise Tier</p>
+            </div>
+          </div>
+          <button className="w-full py-2 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:opacity-90 transition-colors">
+            Upgrade Plan
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <div className="ml-64">
+        {/* Top Bar */}
+        <header className="fixed top-0 right-0 w-[calc(100%-16rem)] h-16 z-40 bg-white/80 dark:bg-slate-950/80 backdrop-blur-xl flex items-center justify-between px-8 shadow-[0_12px_32px_rgba(42,52,57,0.06)]">
+          <div className="flex items-center gap-6 flex-1">
+            <div className="relative w-full max-w-md group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-outline-variant" />
+              <input
+                type="text"
+                placeholder="Search portfolio entities..."
+                className="w-full bg-surface-container-low border-none rounded-xl pl-10 pr-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-outline-variant"
+              />
+            </div>
+          </div>
+
+          {/* Right Section */}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-4">
+              <button className="w-10 h-10 flex items-center justify-center text-slate-700 hover:bg-surface-container rounded-full transition-all">
+                <Bell className="w-5 h-5" />
+              </button>
+              <button className="w-10 h-10 flex items-center justify-center text-slate-700 hover:bg-surface-container rounded-full transition-all">
+                <HelpCircle className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="h-8 w-px bg-outline-variant/20" />
+            
+            <div className="flex items-center gap-3 cursor-pointer group">
+              <div className="text-right">
+                <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Alex Rivera</p>
+                <p className="text-[10px] text-muted-foreground">Lead Analyst</p>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary ring-2 ring-transparent group-hover:ring-primary/20 transition-all flex items-center justify-center">
+                <span className="text-white font-bold text-sm">AR</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="pt-24 px-8 pb-12 min-h-screen">{children}</main>
       </div>
     </div>
   );
