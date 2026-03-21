@@ -24,41 +24,39 @@ export default function AIChatbot() {
   ]);
   const [input, setInput] = useState("");
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!input.trim()) return;
 
     const userMessage: Message = { role: "user", content: input };
-    setMessages([...messages, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
+    
+    const messageToSend = input;
+    setInput("");
 
-    setTimeout(() => {
+    try {
+      const res = await fetch("http://localhost:8000/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: messageToSend, context: null })
+      });
+      const data = await res.json();
+      
       const assistantMessage: Message = {
         role: "assistant",
-        content: getAIResponse(input),
+        content: data.reply || "No response generated.",
       };
       setMessages((prev) => [...prev, assistantMessage]);
-    }, 1000);
-
-    setInput("");
+    } catch (err) {
+      console.error(err);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Sorry, I am having trouble connecting to the Fastrouter server." }
+      ]);
+    }
   };
 
   const handleSuggestedQuery = (query: string) => {
     setInput(query);
-  };
-
-  const getAIResponse = (query: string): string => {
-    const lowercaseQuery = query.toLowerCase();
-
-    if (lowercaseQuery.includes("high") || lowercaseQuery.includes("risk score")) {
-      return "The medium risk score of 56 is primarily due to: (1) A 15% revenue mismatch between GST returns and bank credits, (2) Debt ratio of 0.68 which is higher than the industry average of 0.52, and (3) Cash flow irregularities detected in Q3. However, the company shows consistent 18% YoY growth which is a positive indicator.";
-    } else if (lowercaseQuery.includes("anomal")) {
-      return "We detected several anomalies: (1) Revenue mismatch - GST shows ₹1.18 Cr but bank credits only show ₹1.05 Cr, a difference of ₹13 lakhs, (2) Unusual transaction patterns in Q3 with irregular cash flow timing, and (3) Higher debt accumulation compared to industry peers. These require further investigation.";
-    } else if (lowercaseQuery.includes("loan") && lowercaseQuery.includes("reduc")) {
-      return "The loan amount was reduced from ₹50 lakhs to ₹35 lakhs (70% of requested) due to the medium risk classification. The company's debt ratio of 0.68 indicates they already have significant leverage, so approving the full amount could strain their debt servicing capacity. This conservative approach protects both the lender and the borrower.";
-    } else if (lowercaseQuery.includes("mismatch") || lowercaseQuery.includes("revenue")) {
-      return "The revenue mismatch of 15% (₹13 lakhs difference) between GST and bank records could indicate: (1) Delayed payments from customers, (2) Non-cash transactions not reflected in bank statements, (3) Potential revenue recognition timing differences, or (4) Errors in data reporting. This requires clarification from the applicant.";
-    } else {
-      return "I can help you understand the credit risk analysis better. Try asking about specific aspects like the risk score, anomalies, financial ratios, or recommendations. You can also click on the suggested questions below.";
-    }
   };
 
   return (

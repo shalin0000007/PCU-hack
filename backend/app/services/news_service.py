@@ -31,13 +31,29 @@ def _format_date(date_str: str) -> str:
     except Exception:
         return date_str[:16]
 
+def _analyze_sentiment(text: str) -> str:
+    text_lower = text.lower()
+    negative_words = ["loss", "crime", "fraud", "penalty", "lawsuit", "decline", "debt", "bankrupt", "scandal", "investigation", "drop", "fall", "warning", "breach", "guilty", "fine", "plunge", "concern", "worry", "risk", "shortfall", "irregularities", "bearish", "down", "crash", "plunge", "sue", "illegal"]
+    positive_words = ["profit", "benefit", "growth", "success", "award", "win", "gain", "increase", "surge", "expansion", "partnership", "jump", "record", "soar", "upgrade", "outperform", "milestone", "dividend", "secure", "contract", "improvement", "imporvent", "bullish", "up", "fund", "raise", "boom"]
+    
+    neg_count = sum(1 for word in negative_words if word in text_lower)
+    pos_count = sum(1 for word in positive_words if word in text_lower)
+    
+    if neg_count > pos_count:
+        return "negative"
+    elif pos_count > neg_count:
+        return "positive"
+    return "neutral"
+
 def fetch_company_news(company_name: str) -> list:
     """
     Fetches real news using Google News RSS natively for free!
     Falls back to mock data if an error occurs or no results are found.
     """
     try:
-        query = urllib.parse.quote(company_name)
+        # Enforce financial relevance using Google News boolean operators
+        search_term = f'"{company_name}" AND (money OR stock OR investment OR improvement OR fraud OR revenue OR finance OR penalty OR market OR economy)'
+        query = urllib.parse.quote(search_term)
         url = f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
         
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -70,11 +86,13 @@ def fetch_company_news(company_name: str) -> list:
             pubdate_node = item.find('pubDate')
             pub_date = pubdate_node.text if pubdate_node is not None else ''
             
+            sentiment = _analyze_sentiment(title)
+            
             formatted_news.append({
                 "id": idx + 1,
                 "title": title,
                 "source": source,
-                "sentiment": "neutral",
+                "sentiment": sentiment,
                 "date": _format_date(pub_date),
                 "summary": f"Recent coverage regarding {company_name} from {source}.",
                 "url": link
