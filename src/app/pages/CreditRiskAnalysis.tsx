@@ -36,7 +36,14 @@ import {
   Radar,
 } from "recharts";
 
-const gstVsBankData = [
+const riskBreakdownStatic = [
+  { name: "Financial Risk", value: 35, color: "#f59e0b" },
+  { name: "Fraud Indicators", value: 25, color: "#ef4444" },
+  { name: "External Factors", value: 15, color: "#3b82f6" },
+  { name: "Normal", value: 25, color: "#10b981" },
+];
+
+const gstVsBankDataFallback = [
   { month: "Jan", gst: 850000, bank: 820000 },
   { month: "Feb", gst: 920000, bank: 880000 },
   { month: "Mar", gst: 780000, bank: 850000 },
@@ -45,21 +52,14 @@ const gstVsBankData = [
   { month: "Jun", gst: 1050000, bank: 1020000 },
 ];
 
-const cashFlowData = [
+const cashFlowDataFallback = [
   { quarter: "Q1", inflow: 2800000, outflow: 2400000 },
   { quarter: "Q2", inflow: 3200000, outflow: 2600000 },
   { quarter: "Q3", inflow: 3100000, outflow: 2800000 },
   { quarter: "Q4", inflow: 3500000, outflow: 2900000 },
 ];
 
-const riskBreakdown = [
-  { name: "Financial Risk", value: 35, color: "#f59e0b" },
-  { name: "Fraud Indicators", value: 25, color: "#ef4444" },
-  { name: "External Factors", value: 15, color: "#3b82f6" },
-  { name: "Normal", value: 25, color: "#10b981" },
-];
-
-const industryInsights = [
+const industryInsightsFallback = [
   { category: "Profitability", company: 75, industry: 82 },
   { category: "Liquidity", company: 68, industry: 75 },
   { category: "Efficiency", company: 71, industry: 70 },
@@ -67,7 +67,7 @@ const industryInsights = [
   { category: "Growth", company: 82, industry: 75 },
 ];
 
-const newsData = [
+const newsDataFallback = [
   {
     id: 1,
     title: "Company Secures Major IT Contract",
@@ -94,39 +94,64 @@ const newsData = [
   },
 ];
 
-const peerComparison = [
-  { metric: "Profit Margin (%)", company: 12.5, industry: 15.2 },
-  { metric: "Debt Ratio", company: 0.68, industry: 0.52 },
-  { metric: "Liquidity Ratio", company: 1.8, industry: 2.1 },
-  { metric: "Revenue Growth (%)", company: 18, industry: 22 },
-];
-
 export default function CreditRiskAnalysis() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [newsList, setNewsList] = useState<any[]>(newsData);
-
-  const companyRegistry: Record<string, string> = {
-    "APP-2024-001": "TechVista Solutions Pvt Ltd",
-    "APP-2024-002": "Global Exports & Trading Co",
-    "APP-2024-003": "Urban Construction Ltd",
-    "APP-2024-004": "Fresh Farms Agriculture",
-    "APP-2024-005": "Retail Chain Ventures",
-    "APP-2024-006": "Innovative Software Labs"
-  };
-  
-  const companyName = companyRegistry[id || "APP-2024-001"] || "TechVista Solutions Pvt Ltd";
+  const [reportData, setReportData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`http://localhost:8000/api/news?company=${encodeURIComponent(companyName)}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && data.news) {
-            setNewsList(data.news);
-        }
+    fetch(`http://localhost:8000/api/analysis/${id}`)
+      .then(res => {
+        if (!res.ok) throw new Error("Analysis not found on server");
+        return res.json();
       })
-      .catch(err => console.error("Failed to fetch news:", err));
-  }, []);
+      .then(data => {
+        setReportData(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.warn("API report not found, falling back to dummy data. Error:", err);
+        const companyRegistry: Record<string, string> = {
+          "APP-2024-001": "TechVista Solutions Pvt Ltd",
+          "APP-2024-002": "Global Exports & Trading Co",
+          "APP-2024-003": "Urban Construction Ltd",
+          "APP-2024-004": "Fresh Farms Agriculture",
+          "APP-2024-005": "Retail Chain Ventures",
+          "APP-2024-006": "Innovative Software Labs"
+        };
+        const companyFallback = companyRegistry[id || "APP-2024-001"] || "TechVista Solutions Pvt Ltd";
+        
+        setReportData({
+          application: {
+            loan_amount: 5000000,
+            companies: { name: companyFallback }
+          },
+          report: {
+            created_at: new Date().toISOString(),
+            risk_score: 56,
+            risk_level: "medium",
+            ai_summary: "The medium risk classification is driven by a 15% GST-Bank revenue mismatch and a debt ratio of 0.68 (vs industry avg 0.52). However, the company demonstrates consistent 18% YoY growth and acceptable liquidity ratios. Recommendation: Approve ₹35L (70% of requested amount) with enhanced monitoring and quarterly reviews.",
+            confidence_score: 78,
+            manual_review_required: true,
+            recommended_amount: 3500000,
+            key_findings: [
+              { title: "Revenue Mismatch Detected", description: "15% discrepancy between GST and bank credits" },
+              { title: "Cash Flow Irregularities", description: "Unusual transaction patterns in Q3" },
+              { title: "Consistent Growth Pattern", description: "18% YoY revenue growth maintained" },
+              { title: "High Debt Ratio", description: "0.68 vs industry average of 0.52" }
+            ],
+            chart_data: {
+              gst_vs_bank: gstVsBankDataFallback,
+              cash_flow: cashFlowDataFallback,
+              industry_insights: industryInsightsFallback
+            },
+            news_data: newsDataFallback
+          }
+        });
+        setLoading(false);
+      });
+  }, [id]);
 
   const getSentimentColor = (sentiment: string) => {
     switch (sentiment) {
@@ -138,6 +163,42 @@ export default function CreditRiskAnalysis() {
         return "bg-[#e0e7ff] text-[#6366f1] dark:bg-[#312e81] dark:text-[#a5b4fc]";
     }
   };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="p-6 flex items-center justify-center min-h-[50vh]">
+          <p className="text-[#737373] dark:text-white text-lg">Loading comprehensive AI report...</p>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!reportData || !reportData.report) {
+    return (
+      <Layout>
+        <div className="p-6 space-y-4">
+            <h2 className="text-xl text-[#ef4444]">Analysis Not Found</h2>
+            <p className="text-[#a3a3a3]">Could not fetch analysis report for Application ID {id}. Please ensure it was generated first.</p>
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="px-4 py-2 bg-white dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] text-[#1a1a1a] dark:text-white rounded-xl"
+            >
+              Back to Dashboard
+            </button>
+        </div>
+      </Layout>
+    );
+  }
+
+  const { application, report } = reportData;
+  const companyName = application?.companies?.name || "Unknown Company";
+  
+  const newsList = report.news_data || [];
+  const gstVsBankData = report.chart_data?.gst_vs_bank || [];
+  const cashFlowData = report.chart_data?.cash_flow || [];
+  const industryInsights = report.chart_data?.industry_insights || [];
+  const keyFindings = report.key_findings || [];
 
   return (
     <Layout>
@@ -179,29 +240,32 @@ export default function CreditRiskAnalysis() {
             <div>
               <p className="text-sm text-[#737373] dark:text-[#94a3b8] mb-2">Overall Risk Score</p>
               <div className="flex items-end gap-3">
-                <h2 className="text-5xl text-[#1a1a1a] dark:text-white">56</h2>
+                <h2 className="text-5xl text-[#1a1a1a] dark:text-white">{report.risk_score}</h2>
                 <span className="text-2xl text-[#f59e0b] mb-1">/ 100</span>
               </div>
               <div className="flex items-center gap-2 mt-3">
-                <span className="px-4 py-1 bg-[#fef3c7] text-[#f59e0b] dark:bg-[#78350f] dark:text-[#fcd34d] rounded-full text-sm">
-                  Medium Risk
+                <span className={`px-4 py-1 rounded-full text-sm ${report.risk_level === 'high' ? 'bg-[#fee2e2] text-[#ef4444] dark:bg-[#7f1d1d]/40 dark:text-[#fca5a5]' : report.risk_level === 'medium' ? 'bg-[#fef3c7] text-[#f59e0b] dark:bg-[#78350f]/40 dark:text-[#fcd34d]' : 'bg-[#d1fae5] text-[#10b981] dark:bg-[#065f46]/40 dark:text-[#6ee7b7]'}`}>
+                  {report.risk_level.toUpperCase()} Risk
                 </span>
-                <TrendingDown className="w-5 h-5 text-[#ef4444]" />
-                <span className="text-sm text-[#ef4444]">Declining trend</span>
+                {report.risk_score < 50 ? (
+                  <TrendingDown className="w-5 h-5 text-[#ef4444]" />
+                ) : (
+                  <TrendingUp className="w-5 h-5 text-[#10b981]" />
+                )}
               </div>
             </div>
             <div className="text-right space-y-2">
               <div>
                 <p className="text-xs text-[#737373] dark:text-[#94a3b8]">Company</p>
-                <p className="text-sm text-[#1a1a1a] dark:text-white">TechVista Solutions Pvt Ltd</p>
+                <p className="text-sm text-[#1a1a1a] dark:text-white">{companyName}</p>
               </div>
               <div>
                 <p className="text-xs text-[#737373] dark:text-[#94a3b8]">Loan Amount</p>
-                <p className="text-sm text-[#1a1a1a] dark:text-white">₹50,00,000</p>
+                <p className="text-sm text-[#1a1a1a] dark:text-white">₹{application?.loan_amount?.toLocaleString()}</p>
               </div>
               <div>
                 <p className="text-xs text-[#737373] dark:text-[#94a3b8]">Analysis Date</p>
-                <p className="text-sm text-[#1a1a1a] dark:text-white">March 19, 2026</p>
+                <p className="text-sm text-[#1a1a1a] dark:text-white">{new Date(report.created_at).toLocaleDateString()}</p>
               </div>
             </div>
           </div>
@@ -216,23 +280,20 @@ export default function CreditRiskAnalysis() {
             <div className="space-y-3">
               <h3 className="text-xl">AI Risk Assessment Summary</h3>
               <p className="text-base opacity-95 leading-relaxed">
-                The medium risk classification is driven by a <strong>15% GST-Bank revenue mismatch</strong> and a{" "}
-                <strong>debt ratio of 0.68</strong> (vs industry avg 0.52). However, the company demonstrates{" "}
-                <strong>consistent 18% YoY growth</strong> and acceptable liquidity ratios. <strong>Recommendation:</strong>{" "}
-                Approve ₹35L (70% of requested amount) with enhanced monitoring and quarterly reviews.
+                {report.ai_summary}
               </p>
               <div className="flex gap-3 pt-2">
                 <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl">
                   <p className="text-xs opacity-75">Confidence</p>
-                  <p className="text-lg">78%</p>
+                  <p className="text-lg">{report.confidence_score}%</p>
                 </div>
                 <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl">
                   <p className="text-xs opacity-75">Risk Factors</p>
-                  <p className="text-lg">3 Major</p>
+                  <p className="text-lg">{keyFindings.length} Identified</p>
                 </div>
                 <div className="px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl">
                   <p className="text-xs opacity-75">Manual Review</p>
-                  <p className="text-lg">Required</p>
+                  <p className="text-lg">{report.manual_review_required ? "Required" : "Recommended"}</p>
                 </div>
               </div>
             </div>
@@ -243,38 +304,26 @@ export default function CreditRiskAnalysis() {
         <div className="bg-white dark:bg-[#1e293b] rounded-[24px] shadow-lg border border-[#e5e5e5] dark:border-[#334155] p-8 space-y-4">
           <h3 className="text-lg text-[#1a1a1a] dark:text-white">Key Findings</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="flex gap-3 p-4 bg-[#fef3c7] dark:bg-[#78350f]/20 rounded-xl border border-[#f59e0b]/20">
-              <AlertTriangle className="w-5 h-5 text-[#f59e0b] flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-[#1a1a1a] dark:text-white">Revenue Mismatch Detected</p>
-                <p className="text-xs text-[#737373] dark:text-[#94a3b8] mt-1">
-                  15% discrepancy between GST and bank credits
-                </p>
+            {keyFindings.map((finding: any, i: number) => (
+              <div key={i} className="flex gap-3 p-4 bg-[#fef3c7] dark:bg-[#78350f]/20 rounded-xl border border-[#f59e0b]/20">
+                <AlertTriangle className="w-5 h-5 text-[#f59e0b] flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm text-[#1a1a1a] dark:text-white">{finding.title}</p>
+                  <p className="text-xs text-[#737373] dark:text-[#94a3b8] mt-1">
+                    {finding.description}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex gap-3 p-4 bg-[#fee2e2] dark:bg-[#7f1d1d]/20 rounded-xl border border-[#ef4444]/20">
-              <AlertTriangle className="w-5 h-5 text-[#ef4444] flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-[#1a1a1a] dark:text-white">Cash Flow Irregularities</p>
-                <p className="text-xs text-[#737373] dark:text-[#94a3b8] mt-1">
-                  Unusual transaction patterns in Q3
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-3 p-4 bg-[#d1fae5] dark:bg-[#065f46]/20 rounded-xl border border-[#10b981]/20">
-              <CheckCircle className="w-5 h-5 text-[#10b981] flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-[#1a1a1a] dark:text-white">Consistent Growth Pattern</p>
-                <p className="text-xs text-[#737373] dark:text-[#94a3b8] mt-1">18% YoY revenue growth maintained</p>
-              </div>
-            </div>
-            <div className="flex gap-3 p-4 bg-[#fef3c7] dark:bg-[#78350f]/20 rounded-xl border border-[#f59e0b]/20">
-              <AlertTriangle className="w-5 h-5 text-[#f59e0b] flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-sm text-[#1a1a1a] dark:text-white">High Debt Ratio</p>
-                <p className="text-xs text-[#737373] dark:text-[#94a3b8] mt-1">0.68 vs industry average of 0.52</p>
-              </div>
-            </div>
+            ))}
+            {keyFindings.length === 0 && (
+                <div className="flex gap-3 p-4 bg-[#d1fae5] dark:bg-[#065f46]/20 rounded-xl border border-[#10b981]/20">
+                    <CheckCircle className="w-5 h-5 text-[#10b981] flex-shrink-0 mt-0.5" />
+                    <div>
+                        <p className="text-sm text-[#1a1a1a] dark:text-white">Clean Profile</p>
+                        <p className="text-xs text-[#737373] dark:text-[#94a3b8] mt-1">No significant risk flags were raised by the AI.</p>
+                    </div>
+                </div>
+            )}
           </div>
         </div>
 
@@ -359,7 +408,7 @@ export default function CreditRiskAnalysis() {
               <h3 className="text-lg text-[#1a1a1a] dark:text-white">Recent News & Market Intelligence</h3>
             </div>
             <div className="space-y-4">
-              {newsList.map((news) => (
+              {newsList.map((news: any) => (
                 <div
                   key={news.id}
                   className="p-4 border border-[#e5e5e5] dark:border-[#334155] rounded-xl hover:shadow-md transition-all group cursor-pointer"
@@ -394,7 +443,7 @@ export default function CreditRiskAnalysis() {
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie
-                  data={riskBreakdown}
+                  data={riskBreakdownStatic}
                   cx="50%"
                   cy="50%"
                   innerRadius={60}
@@ -402,7 +451,7 @@ export default function CreditRiskAnalysis() {
                   paddingAngle={2}
                   dataKey="value"
                 >
-                  {riskBreakdown.map((entry, index) => (
+                  {riskBreakdownStatic.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
@@ -410,7 +459,7 @@ export default function CreditRiskAnalysis() {
               </PieChart>
             </ResponsiveContainer>
             <div className="grid grid-cols-2 gap-3">
-              {riskBreakdown.map((item) => (
+              {riskBreakdownStatic.map((item) => (
                 <div key={item.name} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: item.color }} />
                   <div>
@@ -429,17 +478,17 @@ export default function CreditRiskAnalysis() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="space-y-2">
               <p className="text-sm opacity-90">Recommended Loan Amount</p>
-              <p className="text-3xl">₹35,00,000</p>
-              <p className="text-xs opacity-75">70% of requested amount</p>
+              <p className="text-3xl">₹{report.recommended_amount?.toLocaleString()}</p>
+              <p className="text-xs opacity-75">{Math.round((report.recommended_amount / application?.loan_amount) * 100)}% of requested amount</p>
             </div>
             <div className="space-y-2">
               <p className="text-sm opacity-90">Risk Level</p>
-              <p className="text-3xl">Medium</p>
-              <p className="text-xs opacity-75">Enhanced monitoring required</p>
+              <p className="text-3xl">{report.risk_level.charAt(0).toUpperCase() + report.risk_level.slice(1)}</p>
+              <p className="text-xs opacity-75">{report.manual_review_required ? "Manual review required" : "Safe to proceed"}</p>
             </div>
             <div className="space-y-2">
               <p className="text-sm opacity-90">Confidence Score</p>
-              <p className="text-3xl">78%</p>
+              <p className="text-3xl">{report.confidence_score}%</p>
               <p className="text-xs opacity-75">High confidence in assessment</p>
             </div>
           </div>

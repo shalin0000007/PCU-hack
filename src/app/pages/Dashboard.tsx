@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import {
   FileText,
@@ -32,7 +32,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const applications = [
+const dummyApplications = [
   {
     id: "APP-2024-001",
     company: "TechVista Solutions Pvt Ltd",
@@ -128,6 +128,18 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [sortBy, setSortBy] = useState("date");
   const [filterRisk, setFilterRisk] = useState("all");
+  const [appData, setAppData] = useState<any[]>(dummyApplications);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/api/applications")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+            setAppData([...data, ...dummyApplications]);
+        }
+      })
+      .catch(err => console.error("Failed to fetch applications:", err));
+  }, []);
 
   const getRiskColor = (level: string) => {
     switch (level) {
@@ -465,7 +477,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e5e5e5] dark:divide-[#334155]">
-                {applications.map((app) => (
+                {appData.map((app) => (
                   <tr key={app.id} className="hover:bg-[#fafafa] dark:hover:bg-[#334155] transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-[#1a1a1a] dark:text-white">{app.id}</span>
