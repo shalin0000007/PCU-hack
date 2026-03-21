@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
-import { ArrowLeft, Download, Eye, Trash2 } from "lucide-react";
+import { useNavigate, useSearchParams } from "react-router";
+import { ArrowLeft, Download, Eye, Trash2, Search } from "lucide-react";
 import Layout from "../components/Layout";
 
 const dummyHistoryData = [
@@ -72,7 +72,11 @@ const dummyHistoryData = [
 
 export default function History() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [historyData, setHistoryData] = useState<any[]>(dummyHistoryData);
+  const [filterStatus, setFilterStatus] = useState("All Status");
+  const [filterRisk, setFilterRisk] = useState("All Risk Levels");
+  const [searchTerm, setSearchTerm] = useState(searchParams.get("search") || "");
 
   useEffect(() => {
     fetch("http://localhost:8000/api/applications")
@@ -84,6 +88,15 @@ export default function History() {
       })
       .catch(err => console.error("Failed to fetch history:", err));
   }, []);
+
+  const filteredData = historyData.filter(app => {
+    const statusMatch = filterStatus === "All Status" || app.status === filterStatus;
+    const riskMatch = filterRisk === "All Risk Levels" || app.riskLevel === filterRisk.split(" ")[0].toLowerCase();
+    const searchMatch = !searchTerm || 
+      (app.company || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (app.id || "").toLowerCase().includes(searchTerm.toLowerCase());
+    return statusMatch && riskMatch && searchMatch;
+  });
 
   const handleDelete = async (id: string) => {
     if (id.startsWith("APP-2024-")) {
@@ -153,17 +166,34 @@ export default function History() {
               <div>
                 <h2 className="text-lg text-[#1a1a1a] dark:text-white">All Applications</h2>
                 <p className="text-sm text-[#737373] dark:text-[#94a3b8] mt-1">
-                  {historyData.length} total applications processed
+                  {filteredData.length} total applications processed
                 </p>
               </div>
-              <div className="flex gap-3">
-                <select className="px-4 py-2 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white">
+              <div className="flex gap-3 items-center">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#737373] dark:text-[#94a3b8]" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search..."
+                    className="pl-9 pr-3 py-2 w-48 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white placeholder:text-[#737373]"
+                  />
+                </div>
+                <select 
+                  value={filterStatus}
+                  onChange={(e) => setFilterStatus(e.target.value)}
+                  className="px-4 py-2 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white">
                   <option>All Status</option>
                   <option>Approved</option>
                   <option>Rejected</option>
                   <option>Under Review</option>
+                  <option>Flagged</option>
                 </select>
-                <select className="px-4 py-2 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white">
+                <select 
+                  value={filterRisk}
+                  onChange={(e) => setFilterRisk(e.target.value)}
+                  className="px-4 py-2 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white">
                   <option>All Risk Levels</option>
                   <option>Low Risk</option>
                   <option>Medium Risk</option>
@@ -198,7 +228,7 @@ export default function History() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#e5e5e5] dark:divide-[#334155]">
-                {historyData.map((app) => (
+                {filteredData.map((app) => (
                   <tr key={app.id} className="hover:bg-[#fafafa] dark:hover:bg-[#334155] transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-[#1a1a1a] dark:text-white">{app.id}</span>

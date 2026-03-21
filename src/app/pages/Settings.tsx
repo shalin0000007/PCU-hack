@@ -1,7 +1,37 @@
+import { useState, useEffect } from "react";
 import Layout from "../components/Layout";
-import { User, Bell, Lock, Globe, Palette, Database } from "lucide-react";
+import { User, Bell, Lock, Palette, Check } from "lucide-react";
 
 export default function Settings() {
+  const [fullName, setFullName] = useState("Rajesh Kumar");
+  const [email, setEmail] = useState("rajesh.kumar@bank.com");
+  const [highRiskAlerts, setHighRiskAlerts] = useState(true);
+  const [analysisComplete, setAnalysisComplete] = useState(true);
+  const [weeklyReports, setWeeklyReports] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const settings = localStorage.getItem("intelli-credit-settings");
+    if (settings) {
+      const parsed = JSON.parse(settings);
+      setFullName(parsed.fullName ?? "Rajesh Kumar");
+      setEmail(parsed.email ?? "rajesh.kumar@bank.com");
+      setHighRiskAlerts(parsed.highRiskAlerts ?? true);
+      setAnalysisComplete(parsed.analysisComplete ?? true);
+      setWeeklyReports(parsed.weeklyReports ?? false);
+    }
+  }, []);
+
+  const handleSave = () => {
+    localStorage.setItem(
+      "intelli-credit-settings",
+      JSON.stringify({ fullName, email, highRiskAlerts, analysisComplete, weeklyReports })
+    );
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2500);
+  };
+
   return (
     <Layout>
       <div className="p-6 space-y-6">
@@ -24,7 +54,8 @@ export default function Settings() {
                 <label className="text-sm text-[#1a1a1a] dark:text-white">Full Name</label>
                 <input
                   type="text"
-                  defaultValue="Rajesh Kumar"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   className="mt-1 w-full px-4 py-2 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white"
                 />
               </div>
@@ -32,7 +63,8 @@ export default function Settings() {
                 <label className="text-sm text-[#1a1a1a] dark:text-white">Email</label>
                 <input
                   type="email"
-                  defaultValue="rajesh.kumar@bank.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="mt-1 w-full px-4 py-2 bg-[#f5f5f5] dark:bg-[#334155] border border-[#e5e5e5] dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] text-[#1a1a1a] dark:text-white"
                 />
               </div>
@@ -60,21 +92,36 @@ export default function Settings() {
                   <p className="text-sm text-[#1a1a1a] dark:text-white">High Risk Alerts</p>
                   <p className="text-xs text-[#737373] dark:text-[#94a3b8]">Get notified for high-risk cases</p>
                 </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 text-[#00b386] rounded" />
+                <input
+                  type="checkbox"
+                  checked={highRiskAlerts}
+                  onChange={(e) => setHighRiskAlerts(e.target.checked)}
+                  className="w-5 h-5 text-[#00b386] rounded accent-[#00b386]"
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-[#1a1a1a] dark:text-white">Analysis Complete</p>
                   <p className="text-xs text-[#737373] dark:text-[#94a3b8]">When analysis finishes</p>
                 </div>
-                <input type="checkbox" defaultChecked className="w-5 h-5 text-[#00b386] rounded" />
+                <input
+                  type="checkbox"
+                  checked={analysisComplete}
+                  onChange={(e) => setAnalysisComplete(e.target.checked)}
+                  className="w-5 h-5 text-[#00b386] rounded accent-[#00b386]"
+                />
               </div>
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-[#1a1a1a] dark:text-white">Weekly Reports</p>
                   <p className="text-xs text-[#737373] dark:text-[#94a3b8]">Summary of activities</p>
                 </div>
-                <input type="checkbox" className="w-5 h-5 text-[#00b386] rounded" />
+                <input
+                  type="checkbox"
+                  checked={weeklyReports}
+                  onChange={(e) => setWeeklyReports(e.target.checked)}
+                  className="w-5 h-5 text-[#00b386] rounded accent-[#00b386]"
+                />
               </div>
             </div>
           </div>
@@ -136,8 +183,22 @@ export default function Settings() {
                 Don't forget to save your preferences
               </p>
             </div>
-            <button className="px-6 py-3 bg-gradient-to-r from-[#00b386] to-[#059669] text-white rounded-xl hover:shadow-lg transition-all">
-              Save All Changes
+            <button
+              onClick={handleSave}
+              className={`px-6 py-3 rounded-xl hover:shadow-lg transition-all flex items-center gap-2 ${
+                saved
+                  ? "bg-[#10b981] text-white"
+                  : "bg-gradient-to-r from-[#00b386] to-[#059669] text-white"
+              }`}
+            >
+              {saved ? (
+                <>
+                  <Check className="w-5 h-5" />
+                  Saved!
+                </>
+              ) : (
+                "Save All Changes"
+              )}
             </button>
           </div>
         </div>

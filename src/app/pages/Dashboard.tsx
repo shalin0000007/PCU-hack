@@ -32,63 +32,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const dummyApplications = [
-  {
-    id: "APP-2024-001",
-    company: "TechVista Solutions Pvt Ltd",
-    loanAmount: "₹50,00,000",
-    riskScore: 72,
-    riskLevel: "low",
-    status: "Approved",
-    confidence: 92,
-    flag: null,
-  },
-  {
-    id: "APP-2024-002",
-    company: "Global Exports & Trading Co",
-    loanAmount: "₹1,20,00,000",
-    riskScore: 56,
-    riskLevel: "medium",
-    status: "Under Review",
-    confidence: 78,
-    flag: "Revenue Mismatch",
-  },
-  {
-    id: "APP-2024-003",
-    company: "Urban Construction Ltd",
-    loanAmount: "₹3,00,00,000",
-    riskScore: 31,
-    riskLevel: "high",
-    status: "Flagged",
-    confidence: 85,
-    flag: "High Debt Ratio",
-  },
-  {
-    id: "APP-2024-004",
-    company: "Fresh Farms Agriculture",
-    loanAmount: "₹75,00,000",
-    riskScore: 68,
-    riskLevel: "low",
-    status: "Approved",
-    confidence: 88,
-    flag: null,
-  },
-  {
-    id: "APP-2024-005",
-    company: "Retail Chain Ventures",
-    loanAmount: "₹2,50,00,000",
-    riskScore: 45,
-    riskLevel: "medium",
-    status: "Processing",
-    confidence: 76,
-    flag: null,
-  },
-];
-
-const riskDistribution = [
-  { name: "Low Risk", value: 45, color: "#10b981" },
-  { name: "Medium Risk", value: 35, color: "#f59e0b" },
-  { name: "High Risk", value: 20, color: "#ef4444" },
+const defaultRiskDist = [
+  { name: "Low Risk", value: 0, color: "#10b981" },
+  { name: "Medium Risk", value: 0, color: "#f59e0b" },
+  { name: "High Risk", value: 0, color: "#ef4444" },
 ];
 
 const trendData = [
@@ -128,17 +75,25 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [sortBy, setSortBy] = useState("date");
   const [filterRisk, setFilterRisk] = useState("all");
-  const [appData, setAppData] = useState<any[]>(dummyApplications);
+  const [appData, setAppData] = useState<any[]>([]);
+  const [stats, setStats] = useState({ total: 0, highRisk: 0, approved: 0, approvalRate: 0 });
+  const [riskDistribution, setRiskDistribution] = useState(defaultRiskDist);
 
   useEffect(() => {
     fetch("http://localhost:8000/api/applications")
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) {
-            setAppData([...data, ...dummyApplications]);
-        }
+        if (Array.isArray(data)) setAppData(data);
       })
       .catch(err => console.error("Failed to fetch applications:", err));
+
+    fetch("http://localhost:8000/api/dashboard-stats")
+      .then(res => res.json())
+      .then(data => {
+        setStats({ total: data.total || 0, highRisk: data.highRisk || 0, approved: data.approved || 0, approvalRate: data.approvalRate || 0 });
+        if (data.riskDist) setRiskDistribution(data.riskDist);
+      })
+      .catch(err => console.error("Failed to fetch stats:", err));
   }, []);
 
   const getRiskColor = (level: string) => {
@@ -203,7 +158,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="space-y-2 mt-4">
-                  <h2 className="text-4xl">3 High-Risk Cases</h2>
+                  <h2 className="text-4xl">{stats.highRisk} High-Risk Cases</h2>
                   <p className="text-base opacity-90">
                     Revenue mismatch detected in 2 companies • AI recommends manual review
                   </p>
@@ -229,7 +184,7 @@ export default function Dashboard() {
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-sm text-[#737373] dark:text-[#94a3b8]">Total Applications</p>
-                <p className="text-3xl text-[#1a1a1a] dark:text-white">247</p>
+                <p className="text-3xl text-[#1a1a1a] dark:text-white">{stats.total}</p>
                 <p className="text-xs text-[#10b981] flex items-center gap-1">
                   <TrendingUp className="w-3 h-3" />
                   +12% this month
@@ -245,7 +200,7 @@ export default function Dashboard() {
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-sm text-[#737373] dark:text-[#94a3b8]">High Risk Cases</p>
-                <p className="text-3xl text-[#1a1a1a] dark:text-white">43</p>
+                <p className="text-3xl text-[#1a1a1a] dark:text-white">{stats.highRisk}</p>
                 <p className="text-xs text-[#ef4444] flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
                   Needs attention
@@ -261,10 +216,10 @@ export default function Dashboard() {
             <div className="flex items-start justify-between">
               <div className="space-y-1">
                 <p className="text-sm text-[#737373] dark:text-[#94a3b8]">Approved Loans</p>
-                <p className="text-3xl text-[#1a1a1a] dark:text-white">189</p>
+                <p className="text-3xl text-[#1a1a1a] dark:text-white">{stats.approved}</p>
                 <p className="text-xs text-[#10b981] flex items-center gap-1">
                   <CheckCircle className="w-3 h-3" />
-                  76.5% approval rate
+                  {stats.approvalRate}% approval rate
                 </p>
               </div>
               <div className="w-12 h-12 bg-gradient-to-br from-[#d1fae5] to-[#a7f3d0] dark:from-[#065f46] dark:to-[#047857] rounded-2xl flex items-center justify-center">

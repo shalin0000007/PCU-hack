@@ -23,6 +23,7 @@ export default function AIChatbot() {
     },
   ]);
   const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -32,6 +33,7 @@ export default function AIChatbot() {
     
     const messageToSend = input;
     setInput("");
+    setIsLoading(true);
 
     try {
       const res = await fetch("http://localhost:8000/api/chat", {
@@ -52,6 +54,8 @@ export default function AIChatbot() {
         ...prev,
         { role: "assistant", content: "Sorry, I am having trouble connecting to the Fastrouter server." }
       ]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -102,6 +106,15 @@ export default function AIChatbot() {
                 </div>
               </div>
             ))}
+            {isLoading && (
+              <div className="flex justify-start">
+                <div className="bg-[#f5f5f5] text-[#1a1a1a] rounded-xl p-3 flex items-center gap-1">
+                  <span className="w-2 h-2 bg-[#00b386] rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
+                  <span className="w-2 h-2 bg-[#00b386] rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
+                  <span className="w-2 h-2 bg-[#00b386] rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
+                </div>
+              </div>
+            )}
           </div>
 
           {messages.length === 1 && (

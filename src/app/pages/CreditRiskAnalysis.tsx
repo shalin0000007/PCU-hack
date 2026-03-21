@@ -281,7 +281,11 @@ export default function CreditRiskAnalysis() {
               <FileText className="w-4 h-4" />
               View Report
             </button>
-            <button className="px-4 py-2 bg-gradient-to-r from-[#00b386] to-[#059669] text-white rounded-xl hover:shadow-lg transition-all flex items-center gap-2">
+            <button 
+              onClick={() => {
+                window.open(`http://localhost:8000/api/report/${id}/pdf`, '_blank');
+              }}
+              className="px-4 py-2 bg-gradient-to-r from-[#00b386] to-[#059669] text-white rounded-xl hover:shadow-lg transition-all flex items-center gap-2">
               <Download className="w-4 h-4" />
               Download
             </button>

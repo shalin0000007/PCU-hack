@@ -32,6 +32,7 @@ def _format_date(date_str: str) -> str:
         return date_str[:16]
 
 def _analyze_sentiment(text: str) -> str:
+    """Keyword-based fallback sentiment analysis."""
     text_lower = text.lower()
     negative_words = ["loss", "crime", "fraud", "penalty", "lawsuit", "decline", "debt", "bankrupt", "scandal", "investigation", "drop", "fall", "warning", "breach", "guilty", "fine", "plunge", "concern", "worry", "risk", "shortfall", "irregularities", "bearish", "down", "crash", "plunge", "sue", "illegal"]
     positive_words = ["profit", "benefit", "growth", "success", "award", "win", "gain", "increase", "surge", "expansion", "partnership", "jump", "record", "soar", "upgrade", "outperform", "milestone", "dividend", "secure", "contract", "improvement", "imporvent", "bullish", "up", "fund", "raise", "boom"]
@@ -44,6 +45,42 @@ def _analyze_sentiment(text: str) -> str:
     elif pos_count > neg_count:
         return "positive"
     return "neutral"
+
+
+def _ai_batch_sentiment(headlines: list[str]) -> list[str]:
+    """Use AI to classify sentiment for a batch of headlines in one call."""
+    try:
+        import os, json
+        from openai import OpenAI
+        from dotenv import load_dotenv
+        load_dotenv()
+        api_key = os.getenv("KEY")
+        if not api_key:
+            return [_analyze_sentiment(h) for h in headlines]
+        
+        client = OpenAI(base_url="https://go.fastrouter.ai/api/v1", api_key=api_key)
+        
+        numbered = "\n".join(f"{i+1}. {h}" for i, h in enumerate(headlines))
+        prompt = f"""Classify each headline as "positive", "negative", or "neutral" from a financial/credit risk perspective.
+
+{numbered}
+
+Return ONLY a JSON array of strings, e.g. ["positive", "negative", "neutral"]. No explanation."""
+
+        completion = client.chat.completions.create(
+            model="openai/gpt-5-nano",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        content = completion.choices[0].message.content.strip()
+        if content.startswith("```"): content = content.split("\n", 1)[1]
+        if content.endswith("```"): content = content.rsplit("```", 1)[0]
+        result = json.loads(content.strip())
+        if isinstance(result, list) and len(result) == len(headlines):
+            return [r if r in ("positive", "negative", "neutral") else "neutral" for r in result]
+    except Exception as e:
+        print(f"AI Sentiment Error: {e}")
+    
+    return [_analyze_sentiment(h) for h in headlines]
 
 def fetch_company_news(company_name: str) -> list:
     """
@@ -65,6 +102,19 @@ def fetch_company_news(company_name: str) -> list:
         
         if not items:
             return _get_dummy_news(company_name, no_results=True)
+        
+        # Collect titles for batch AI sentiment
+        raw_titles = []
+        for item in items[:3]:
+            title_node = item.find('title')
+            title = title_node.text if title_node is not None else 'No Title'
+            if " - " in title:
+                parts = title.rsplit(" - ", 1)
+                title = parts[0]
+            raw_titles.append(title)
+        
+        # Run AI batch sentiment (single API call for all headlines)
+        sentiments = _ai_batch_sentiment(raw_titles)
             
         formatted_news = []
         for idx, item in enumerate(items[:3]):
@@ -86,13 +136,11 @@ def fetch_company_news(company_name: str) -> list:
             pubdate_node = item.find('pubDate')
             pub_date = pubdate_node.text if pubdate_node is not None else ''
             
-            sentiment = _analyze_sentiment(title)
-            
             formatted_news.append({
                 "id": idx + 1,
                 "title": title,
                 "source": source,
-                "sentiment": sentiment,
+                "sentiment": sentiments[idx] if idx < len(sentiments) else _analyze_sentiment(title),
                 "date": _format_date(pub_date),
                 "summary": f"Recent coverage regarding {company_name} from {source}.",
                 "url": link

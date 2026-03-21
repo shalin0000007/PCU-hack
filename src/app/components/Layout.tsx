@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import {
   LayoutDashboard,
@@ -12,6 +12,7 @@ import {
   User,
   Moon,
   Sun,
+  LogOut,
 } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -23,6 +24,13 @@ export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { isDarkMode, toggleTheme } = useTheme();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      navigate(`/history?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/dashboard" },
@@ -100,7 +108,10 @@ export default function Layout({ children }: LayoutProps) {
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#737373] dark:text-[#94a3b8]" />
                   <input
                     type="text"
-                    placeholder="Search applications, companies..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleSearch}
+                    placeholder="Search applications, companies... (press Enter)"
                     className="w-full pl-10 pr-4 py-2 bg-[#f5f5f5] dark:bg-[#334155] border border-transparent dark:border-[#475569] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#00b386] text-sm text-[#1a1a1a] dark:text-white placeholder:text-[#737373] dark:placeholder:text-[#94a3b8] transition-all"
                   />
                 </div>
