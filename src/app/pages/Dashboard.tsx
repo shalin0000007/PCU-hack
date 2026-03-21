@@ -135,7 +135,7 @@ export default function Dashboard() {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-            setAppData([...data, ...dummyApplications]);
+          setAppData([...data, ...dummyApplications]);
         }
       })
       .catch(err => console.error("Failed to fetch applications:", err));

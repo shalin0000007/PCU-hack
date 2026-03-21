@@ -29,7 +29,7 @@ export default function AIChatbot() {
 
     const userMessage: Message = { role: "user", content: input };
     setMessages((prev) => [...prev, userMessage]);
-    
+
     const messageToSend = input;
     setInput("");
 
@@ -40,7 +40,7 @@ export default function AIChatbot() {
         body: JSON.stringify({ message: messageToSend, context: null })
       });
       const data = await res.json();
-      
+
       const assistantMessage: Message = {
         role: "assistant",
         content: data.reply || "No response generated.",
@@ -71,8 +71,8 @@ export default function AIChatbot() {
       )}
 
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 bg-white rounded-[20px] shadow-2xl border border-[#e5e5e5] z-50 flex flex-col max-h-[600px]">
-          <div className="flex items-center justify-between p-4 border-b border-[#e5e5e5] bg-gradient-to-r from-[#00b386] to-[#059669] rounded-t-[20px]">
+        <div className="fixed bottom-6 right-6 w-96 bg-white/60 dark:bg-gray-900/60 backdrop-blur-xl rounded-[20px] shadow-2xl border border-white/50 dark:border-gray-700/50 z-50 flex flex-col max-h-[600px]">
+          <div className="flex items-center justify-between p-4 border-b border-white/50 dark:border-gray-700/50 bg-gradient-to-r from-[#00b386]/90 to-[#059669]/90 backdrop-blur-sm rounded-t-[20px]">
             <div className="flex items-center gap-2 text-white">
               <Sparkles className="w-5 h-5" />
               <h3 className="font-medium">AI Assistant</h3>
@@ -92,11 +92,10 @@ export default function AIChatbot() {
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[80%] rounded-xl p-3 ${
-                    msg.role === "user"
-                      ? "bg-[#00b386] text-white"
-                      : "bg-[#f5f5f5] text-[#1a1a1a]"
-                  }`}
+                  className={`max-w-[80%] rounded-xl p-3 ${msg.role === "user"
+                      ? "bg-gradient-to-r from-[#00b386] to-[#059669] text-white"
+                      : "bg-white/40 dark:bg-gray-800/40 backdrop-blur-sm text-[#1a1a1a] dark:text-white border border-white/40 dark:border-gray-700/50"
+                    }`}
                 >
                   <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 </div>
@@ -112,7 +111,7 @@ export default function AIChatbot() {
                   <button
                     key={idx}
                     onClick={() => handleSuggestedQuery(query)}
-                    className="text-left px-3 py-2 bg-[#e5f7f3] text-[#00b386] rounded-lg hover:bg-[#d1fae5] transition-colors text-xs"
+                    className="text-left px-3 py-2 bg-white/60 dark:bg-[#0f766e]/40 backdrop-blur-sm border border-white/40 dark:border-[#0f766e]/50 text-[#00b386] dark:text-[#00d9a0] rounded-lg hover:bg-[#d1fae5] dark:hover:bg-[#0f766e]/60 transition-colors text-xs"
                   >
                     {query}
                   </button>
@@ -121,7 +120,7 @@ export default function AIChatbot() {
             </div>
           )}
 
-          <div className="p-4 border-t border-[#e5e5e5]">
+          <div className="p-4 border-t border-white/50 dark:border-gray-700/50">
             <div className="flex gap-2">
               <input
                 type="text"
@@ -129,7 +128,7 @@ export default function AIChatbot() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
                 placeholder="Ask me anything..."
-                className="flex-1 px-4 py-2 bg-[#f5f5f5] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent"
+                className="flex-1 px-4 py-2 bg-white/40 dark:bg-gray-800/40 backdrop-blur-sm border border-white/40 dark:border-gray-600/50 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent text-gray-900 dark:text-white"
               />
               <button
                 onClick={handleSendMessage}

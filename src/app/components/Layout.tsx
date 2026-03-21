@@ -68,11 +68,10 @@ export default function Layout({ children }: LayoutProps) {
                 <button
                   key={item.path}
                   onClick={() => navigate(item.path)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${
-                    active
-                      ? "bg-gradient-to-r from-[#00b386] to-[#059669] text-white shadow-lg"
-                      : "text-[#737373] dark:text-[#94a3b8] hover:bg-[#f5f5f5] dark:hover:bg-[#334155]"
-                  }`}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 ${active
+                    ? "bg-gradient-to-r from-[#00b386] to-[#059669] text-white shadow-lg"
+                    : "text-[#737373] dark:text-[#94a3b8] hover:bg-[#f5f5f5] dark:hover:bg-[#334155]"
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   <span className="text-sm">{item.label}</span>

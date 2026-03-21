@@ -88,22 +88,20 @@ export default function AnalysisProcess() {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className={`flex items-center gap-4 p-4 rounded-xl transition-all duration-300 ${
-                    isCurrent
-                      ? "bg-[#e5f7f3] dark:bg-[#0f766e]/20 border border-[#00b386]"
-                      : isCompleted
+                  className={`flex items-center gap-4 p-4 rounded-xl transition-all duration-300 ${isCurrent
+                    ? "bg-[#e5f7f3] dark:bg-[#0f766e]/20 border border-[#00b386]"
+                    : isCompleted
                       ? "bg-[#f5f5f5] dark:bg-[#334155]"
                       : "bg-white dark:bg-transparent border border-[#e5e5e5] dark:border-[#334155]"
-                  }`}
+                    }`}
                 >
                   <div
-                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${
-                      isCompleted
-                        ? "bg-[#10b981]"
-                        : isCurrent
+                    className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300 ${isCompleted
+                      ? "bg-[#10b981]"
+                      : isCurrent
                         ? "bg-[#00b386]"
                         : "bg-[#e5e5e5] dark:bg-[#475569]"
-                    }`}
+                      }`}
                   >
                     {isCompleted ? (
                       <CheckCircle className="w-5 h-5 text-white" />
@@ -114,13 +112,12 @@ export default function AnalysisProcess() {
                     )}
                   </div>
                   <span
-                    className={`text-sm transition-colors duration-300 ${
-                      isCompleted
-                        ? "text-[#10b981]"
-                        : isCurrent
+                    className={`text-sm transition-colors duration-300 ${isCompleted
+                      ? "text-[#10b981]"
+                      : isCurrent
                         ? "text-[#00b386]"
                         : "text-[#737373] dark:text-[#94a3b8]"
-                    }`}
+                      }`}
                   >
                     {step.label}
                   </span>

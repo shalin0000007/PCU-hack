@@ -79,7 +79,7 @@ export default function History() {
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {
-            setHistoryData([...data, ...dummyHistoryData]);
+          setHistoryData([...data, ...dummyHistoryData]);
         }
       })
       .catch(err => console.error("Failed to fetch history:", err));
@@ -90,7 +90,7 @@ export default function History() {
       setHistoryData(prev => prev.filter(app => app.id !== id));
       return;
     }
-    
+
     try {
       const res = await fetch(`http://localhost:8000/api/applications/${id}`, {
         method: "DELETE"

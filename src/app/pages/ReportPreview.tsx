@@ -7,11 +7,11 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 export default function ReportPreview() {
   const navigate = useNavigate();
   const { id } = useParams();
-  
+
   const [reportData, setReportData] = useState<any>(null);
   const [aiAssessment, setAiAssessment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [chatOpen, setChatOpen] = useState(false);
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Hello! I can help you understand this credit risk report. Ask me anything!" },
@@ -29,31 +29,31 @@ export default function ReportPreview() {
         return res.json();
       })
     ])
-    .then(([analysisData, aiData]) => {
-      setReportData(analysisData);
-      setAiAssessment(aiData);
-      setLoading(false);
-    })
-    .catch(err => {
-      console.error("Error fetching report data:", err);
-      setLoading(false);
-    });
+      .then(([analysisData, aiData]) => {
+        setReportData(analysisData);
+        setAiAssessment(aiData);
+        setLoading(false);
+      })
+      .catch(err => {
+        console.error("Error fetching report data:", err);
+        setLoading(false);
+      });
   }, [id]);
 
   const application = reportData?.application || {};
   const report = reportData?.report || {};
-  
+
   const companyName = application?.companies?.name || "Intelli-Credit AI Platform";
   const industry = application?.companies?.industry || "Information Technology";
   const displayId = application?.id || id;
   const analysisDate = report?.created_at ? new Date(report.created_at).toLocaleDateString() : "March 19, 2026";
-  
+
   const riskScore = aiAssessment?.score ?? report?.risk_score ?? 56;
   const riskLevel = aiAssessment?.risk_level ?? report?.risk_level ?? "medium";
   const confidenceLevel = aiAssessment?.confidence ?? report?.confidence_score ?? 78;
   const aiExplanation = aiAssessment?.summary ?? report?.ai_summary ?? "The medium risk classification is primarily driven by a combination of financial inconsistencies and debt exposure.";
   const keyFindings = aiAssessment?.key_findings?.length ? aiAssessment?.key_findings : report?.key_findings ?? [];
-  
+
   const recommendedAmount = report?.recommended_amount || 3500000;
 
   const getRiskColor = (level: string) => {
@@ -95,11 +95,11 @@ export default function ReportPreview() {
 
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
-    
+
     const userMsg = inputMessage;
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setInputMessage("");
-    
+
     try {
       const response = await fetch(`http://localhost:8000/api/chat/${id}`, {
         method: "POST",
@@ -381,11 +381,10 @@ export default function ReportPreview() {
                 {messages.map((msg, idx) => (
                   <div key={idx} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`max-w-[80%] p-3 rounded-xl text-sm whitespace-pre-wrap ${
-                        msg.role === "user"
-                          ? "bg-gradient-to-r from-[#00b386] to-[#059669] text-white"
-                          : "bg-[#f5f5f5] dark:bg-[#334155] text-[#1a1a1a] dark:text-white"
-                      }`}
+                      className={`max-w-[80%] p-3 rounded-xl text-sm whitespace-pre-wrap ${msg.role === "user"
+                        ? "bg-gradient-to-r from-[#00b386] to-[#059669] text-white"
+                        : "bg-[#f5f5f5] dark:bg-[#334155] text-[#1a1a1a] dark:text-white"
+                        }`}
                     >
                       {msg.content}
                     </div>
