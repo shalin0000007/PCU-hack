@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { CheckCircle, Loader2 } from "lucide-react";
-import { motion } from "framer-motion";
+import { motion } from "motion/react";
 
 const steps = [
   { id: 1, label: "Fetching company data", duration: 2000 },

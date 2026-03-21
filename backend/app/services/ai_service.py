@@ -112,5 +112,54 @@ def _fallback_assessment() -> dict:
     }
 
 def generate_risk_summary(company_name: str, risk_score: int, flags: list, loan_amount: float) -> str:
-    """Fallback stub to satisfy Legacy POST /analyze imports."""
-    return f"AI Risk Assessment pending. Generated via stub."
+    """Generate an AI-powered risk summary using financial context."""
+    client = get_ai_client()
+    
+    risk_level = "low" if risk_score >= 70 else ("medium" if risk_score >= 45 else "high")
+    flags_text = "; ".join(flags) if flags else "No significant flags detected"
+    
+    if not client:
+        return _fallback_summary(company_name, risk_score, risk_level, flags, loan_amount)
+    
+    prompt = f"""You are a senior credit risk analyst writing a brief assessment summary.
+
+Company: {company_name}
+Risk Score: {risk_score}/100 ({risk_level} risk)
+Loan Requested: ₹{loan_amount:,.0f}
+Key Flags: {flags_text}
+
+Write exactly 3 sentences:
+1. Overall risk classification and primary driver
+2. The most critical financial concern or strength
+3. Clear recommendation (approve/conditional approve/reject with reason)
+
+Be direct, professional, and specific. Do NOT use markdown or bullet points. Output ONLY the 3 sentences as a single paragraph."""
+
+    try:
+        completion = client.chat.completions.create(
+            model="openai/gpt-5-nano",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        summary = completion.choices[0].message.content.strip()
+        if summary:
+            return summary
+        return _fallback_summary(company_name, risk_score, risk_level, flags, loan_amount)
+    except Exception as e:
+        print(f"AI Summary Error: {e}")
+        return _fallback_summary(company_name, risk_score, risk_level, flags, loan_amount)
+
+
+def _fallback_summary(company_name: str, risk_score: int, risk_level: str, flags: list, loan_amount: float) -> str:
+    """Deterministic fallback when AI is unavailable."""
+    if risk_level == "low":
+        verdict = f"{company_name} demonstrates a strong financial profile with a risk score of {risk_score}/100, indicating low default probability."
+        recommendation = f"Recommendation: Approve the loan of ₹{loan_amount:,.0f} at standard terms."
+    elif risk_level == "medium":
+        verdict = f"{company_name} shows a moderate risk profile scoring {risk_score}/100, with some financial indicators requiring attention."
+        recommendation = f"Recommendation: Conditional approval of ₹{loan_amount * 0.75:,.0f} (75% of requested amount) with enhanced monitoring."
+    else:
+        verdict = f"{company_name} presents an elevated risk profile scoring {risk_score}/100, with multiple financial red flags identified."
+        recommendation = f"Recommendation: Manual review required before proceeding. Consider limiting exposure to ₹{loan_amount * 0.50:,.0f} (50% of requested)."
+    
+    concern = f"Primary concern: {flags[0]}." if flags else "No critical flags were identified in the available financial data."
+    return f"{verdict} {concern} {recommendation}"
