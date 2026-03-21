@@ -13,6 +13,7 @@ import {
   ChevronDown,
   Sparkles,
 } from "lucide-react";
+import { useAuth } from "../contexts/AuthContext";
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -28,12 +29,22 @@ const navItems = [
 export default function Layout({ children }: LayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   const toggleDarkMode = () => {
     setIsDarkMode(!isDarkMode);
     document.documentElement.classList.toggle("dark");
   };
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
+  const userInitials = user?.name
+    ? user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+    : "U";
 
   return (
     <div className={`flex min-h-screen bg-surface ${isDarkMode ? "dark" : ""}`}>
@@ -79,18 +90,18 @@ export default function Layout({ children }: LayoutProps) {
         <div className="border-t border-slate-200 dark:border-slate-700 pt-4 mt-4">
           <div className="flex items-center gap-3 px-2 mb-4">
             <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900 flex items-center justify-center">
-              <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">RK</span>
+              <span className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{userInitials}</span>
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">
-                Rahul Kumar
+                {user?.name || "User"}
               </p>
-              <p className="text-xs text-slate-400 truncate">Credit Analyst</p>
+              <p className="text-xs text-slate-400 truncate">{user?.role || "Credit Analyst"}</p>
             </div>
             <ChevronDown className="w-4 h-4 text-slate-400" />
           </div>
           <button
-            onClick={() => navigate("/")}
+            onClick={handleLogout}
             className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-slate-500 dark:text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
           >
             <LogOut className="w-5 h-5" />

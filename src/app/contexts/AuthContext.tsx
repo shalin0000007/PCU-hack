@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode } from "react";
 
 interface User {
   email: string;
@@ -9,6 +9,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
   getAuthHeaders: () => Record<string, string>;
@@ -21,19 +22,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem("user");
     return stored ? JSON.parse(stored) : null;
   });
+  const [isLoading, setIsLoading] = useState(false);
 
   const isAuthenticated = !!user;
 
   const login = async (email: string, _password: string): Promise<boolean> => {
-    // For demo, accept any login
-    const userData: User = {
-      email: email || "demo@intellicredit.ai",
-      name: email.split("@")[0] || "Demo User",
-      role: "Credit Analyst",
-    };
-    setUser(userData);
-    localStorage.setItem("user", JSON.stringify(userData));
-    return true;
+    setIsLoading(true);
+    
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // For demo, accept any login with email
+    if (email) {
+      const userData: User = {
+        email: email,
+        name: email.split("@")[0] || "Demo User",
+        role: "Credit Analyst",
+      };
+      setUser(userData);
+      localStorage.setItem("user", JSON.stringify(userData));
+      setIsLoading(false);
+      return true;
+    }
+    
+    setIsLoading(false);
+    return false;
   };
 
   const logout = () => {
@@ -49,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, login, logout, getAuthHeaders }}>
+    <AuthContext.Provider value={{ user, isAuthenticated, isLoading, login, logout, getAuthHeaders }}>
       {children}
     </AuthContext.Provider>
   );
