@@ -500,7 +500,45 @@ def get_ai_assessment(application_id: str):
 @router.post("/chat")
 def chat_endpoint(req: ChatRequest):
     from app.services.ai_service import chat_with_agent
-    response = chat_with_agent(req.message, req.context)
+    
+    # Auto-build context from all DB data so AI knows everything
+    context = req.context or {}
+    if supabase and not context:
+        try:
+            apps = supabase.table("applications").select("*, companies(name, industry), analysis_reports(*), ai_risk_assessments(*)").order("created_at", desc=True).limit(10).execute()
+            
+            portfolio = []
+            for a in apps.data:
+                comp = a.get("companies") or {}
+                reports = a.get("analysis_reports") or []
+                r = reports[0] if reports else {}
+                ai_list = a.get("ai_risk_assessments") or []
+                ai = ai_list[0] if ai_list else {}
+                
+                portfolio.append({
+                    "app_id": a["id"],
+                    "company": comp.get("name", "Unknown"),
+                    "industry": comp.get("industry", "Unknown"),
+                    "loan_amount": a.get("loan_amount"),
+                    "status": a.get("status"),
+                    "risk_score": ai.get("score") or r.get("risk_score"),
+                    "risk_level": ai.get("risk_level") or r.get("risk_level"),
+                    "confidence": ai.get("confidence") or r.get("confidence_score"),
+                    "ai_summary": (ai.get("summary") or r.get("ai_summary", ""))[:200],
+                    "primary_flag": r.get("primary_flag"),
+                    "recommended_amount": r.get("recommended_amount"),
+                    "key_findings": ai.get("key_findings") or r.get("key_findings") or [],
+                    "chart_data_summary": {
+                        "months_of_data": len((r.get("chart_data") or {}).get("gst_vs_bank", [])),
+                        "has_industry_insights": bool((r.get("chart_data") or {}).get("industry_insights")),
+                    }
+                })
+            
+            context = {"portfolio": portfolio, "total_applications": len(apps.data)}
+        except Exception as e:
+            print(f"Chat context error: {e}")
+    
+    response = chat_with_agent(req.message, context)
     return {"reply": response}
 
 @router.post("/chat/{application_id}")

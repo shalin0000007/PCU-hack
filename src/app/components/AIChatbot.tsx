@@ -2,10 +2,10 @@ import { useState } from "react";
 import { MessageCircle, X, Send, Sparkles } from "lucide-react";
 
 const suggestedQueries = [
-  "Why is the risk score high?",
-  "Explain the anomalies detected",
-  "Why was the loan amount reduced?",
-  "What caused the revenue mismatch?",
+  "Which companies are flagged as high risk and why?",
+  "Compare TCS and Infosys risk profiles",
+  "What is the overall portfolio health?",
+  "Which loans should we approve today?",
 ];
 
 interface Message {

@@ -18,16 +18,52 @@ def chat_with_agent(user_message: str, context: dict = None) -> str:
     client = get_ai_client()
     if not client:
         return "AI connectivity is currently unavailable. Please check API keys."
-        
-    system_prompt = (
-        "You are a highly intelligent financial risk assessment AI assistant. "
-        "You help users understand their company's risk report. "
-        "CRITICAL INSTRUCTION: Keep responses extremely brief (maximum 3 bullet points). "
-        "Format using strict bullet points and newlines. "
-        "Do not write introductory or concluding sentences. Output ONLY the direct answer."
-    )
+    
+    # Build a rich system prompt with full portfolio context
+    system_prompt = """You are an expert senior credit risk analyst AI assistant working at Intelli-Credit AI, a fintech platform for credit risk assessment.
+
+Your role:
+- Help credit officers understand risk reports, company assessments, and financial data
+- Answer questions about specific companies in the portfolio
+- Explain risk scores, flags, anomalies, and AI recommendations
+- Compare companies, industries, and risk levels
+- Provide actionable insights based on uploaded financial documents (GST returns, bank statements)
+- Explain why loan amounts were recommended at certain levels
+
+Response rules:
+- Be concise (2-4 bullet points max)
+- Use specific numbers from the data when available
+- Reference actual company names, scores, and findings
+- If asked about a company, find it in the portfolio data and give specifics
+- If asked a general question, summarize across the portfolio
+- Always be professional and data-driven"""
+
     if context:
-        system_prompt += f"\nHere is the context of the current report: {context}"
+        portfolio = context.get("portfolio", [])
+        if portfolio:
+            system_prompt += f"\n\nYou currently have {context.get('total_applications', len(portfolio))} applications in the portfolio.\n\n"
+            system_prompt += "PORTFOLIO DATA (use this to answer questions):\n"
+            for p in portfolio:
+                system_prompt += f"\n--- {p.get('company', 'Unknown')} ({p.get('industry', 'Unknown')}) ---\n"
+                system_prompt += f"App ID: {p.get('app_id')}\n"
+                system_prompt += f"Loan: ₹{int(p.get('loan_amount', 0)):,} | Recommended: ₹{int(p.get('recommended_amount') or 0):,}\n"
+                system_prompt += f"Risk Score: {p.get('risk_score')}/100 ({p.get('risk_level')} risk) | Confidence: {p.get('confidence')}%\n"
+                system_prompt += f"Status: {p.get('status')}\n"
+                if p.get('primary_flag'):
+                    system_prompt += f"⚠ Flag: {p['primary_flag']}\n"
+                if p.get('ai_summary'):
+                    system_prompt += f"Summary: {p['ai_summary']}\n"
+                findings = p.get('key_findings') or []
+                for f in findings[:3]:
+                    if isinstance(f, dict):
+                        desc = f.get('description') or f.get('text') or f.get('message') or ''
+                        if desc:
+                            system_prompt += f"  Finding: {desc}\n"
+                chart = p.get('chart_data_summary', {})
+                if chart.get('months_of_data'):
+                    system_prompt += f"Data: {chart['months_of_data']} months of GST/Bank data uploaded\n"
+        else:
+            system_prompt += f"\n\nContext data: {json.dumps(context)[:2000]}"
         
     try:
         completion = client.chat.completions.create(
