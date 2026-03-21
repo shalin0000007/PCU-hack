@@ -14,6 +14,7 @@ supabase: Client = None
 if SUPABASE_URL and SUPABASE_KEY and SUPABASE_KEY != "dummy_key_if_not_set":
     try:
         supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("Supabase client initialized successfully")
     except Exception as e:
         print(f"Failed to initialize Supabase client: {e}")
         supabase = None

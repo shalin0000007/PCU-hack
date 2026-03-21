@@ -6,19 +6,14 @@ import {
   CheckCircle,
   Clock,
   Plus,
-  Download,
-  Sliders,
-  Users,
-  Star,
-  Sparkles,
-  Radio,
-  User,
-  Calendar,
   Eye,
   Trash2,
+  TrendingUp,
+  Sparkles,
 } from "lucide-react";
 import Layout from "../components/Layout";
 import AIChatbot from "../components/AIChatbot";
+import { useAuth } from "../contexts/AuthContext";
 import {
   PieChart,
   Pie,
@@ -32,11 +27,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const riskDistribution = [
-  { name: "Low Risk", value: 65, color: "#10b981" },
-  { name: "Medium Risk", value: 25, color: "#f59e0b" },
-  { name: "High Risk", value: 10, color: "#ef4444" },
-];
+const API_URL = "http://localhost:8000/api";
 
 const trendData = [
   { day: "MON", volume: 180, risk: 20 },
@@ -52,18 +43,17 @@ const staticAlerts = [
   {
     id: 1,
     type: "critical",
-    title: "ID Collision Detected",
-    description: "Application #APP-0421 exhibits multiple ID associations in high-risk zones.",
+    title: "High Risk Detection",
+    description: "New applications flagged for manual review based on AI analysis.",
     badge: "CRITICAL",
     badgeColor: "bg-error",
-    action: "Review Dossier",
     time: "2m ago",
   },
   {
     id: 2,
     type: "warning",
     title: "Income Discrepancy",
-    description: "Cross-check with tax records shows a 15% delta in reported annual earnings.",
+    description: "Cross-check with GST records shows variance in reported earnings.",
     badge: "MANUAL CHECK",
     badgeColor: "bg-amber-500",
     time: "16m ago",
@@ -71,68 +61,82 @@ const staticAlerts = [
   {
     id: 3,
     type: "success",
-    title: "Asset Validation Success",
-    description: "Collateral evaluation for #APP-0912 confirmed by third-party auditor.",
+    title: "Analysis Complete",
+    description: "3 new applications processed and ready for review.",
     time: "1h ago",
-  },
-];
-
-const dummyApplications = [
-  {
-    id: "APP-2024-001",
-    company: "TechVista Solutions Pvt Ltd",
-    loanAmount: "₹50,00,000",
-    riskScore: 72,
-    riskLevel: "low",
-    status: "Approved",
-    confidence: 92,
-    flag: null,
-    date: "2024-03-15",
-  },
-  {
-    id: "APP-2024-002",
-    company: "Global Exports & Trading Co",
-    loanAmount: "₹1,20,00,000",
-    riskScore: 56,
-    riskLevel: "medium",
-    status: "Under Review",
-    confidence: 78,
-    flag: "Revenue Mismatch",
-    date: "2024-03-14",
-  },
-  {
-    id: "APP-2024-003",
-    company: "Urban Construction Ltd",
-    loanAmount: "₹3,00,00,000",
-    riskScore: 31,
-    riskLevel: "high",
-    status: "Flagged",
-    confidence: 85,
-    flag: "High Debt Ratio",
-    date: "2024-03-13",
   },
 ];
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [applications, setApplications] = useState<any[]>(dummyApplications);
+  const { user, getAuthHeaders } = useAuth();
+  
+  const [applications, setApplications] = useState<any[]>([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    highRisk: 0,
+    approved: 0,
+    approvalRate: 0,
+    riskDist: [
+      { name: "Low Risk", value: 65, color: "#10b981" },
+      { name: "Medium Risk", value: 25, color: "#f59e0b" },
+      { name: "High Risk", value: 10, color: "#ef4444" },
+    ],
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const [alerts] = useState(staticAlerts);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/applications")
-      .then((res) => res.json())
-      .then((data) => {
-        if (Array.isArray(data) && data.length > 0) {
-          setApplications([...data, ...dummyApplications]);
+    const fetchData = async () => {
+      setIsLoading(true);
+      const headers = getAuthHeaders();
+      
+      try {
+        // Fetch dashboard stats
+        const statsRes = await fetch(`${API_URL}/dashboard-stats`, { headers });
+        const statsData = await statsRes.json();
+        if (statsData) {
+          setStats({
+            total: statsData.total || 0,
+            highRisk: statsData.highRisk || 0,
+            approved: statsData.approved || 0,
+            approvalRate: statsData.approvalRate || 0,
+            riskDist: statsData.riskDist?.length > 0 ? statsData.riskDist : stats.riskDist,
+          });
         }
-      })
-      .catch((err) => console.error("Failed to fetch applications:", err));
-  }, []);
+      } catch (err) {
+        console.error("Failed to fetch stats:", err);
+      }
+
+      try {
+        // Fetch applications
+        const appsRes = await fetch(`${API_URL}/applications`, { headers });
+        const appsData = await appsRes.json();
+        if (Array.isArray(appsData)) {
+          setApplications(appsData);
+        }
+      } catch (err) {
+        console.error("Failed to fetch applications:", err);
+      }
+      
+      setIsLoading(false);
+    };
+
+    fetchData();
+  }, [user]);
 
   const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this application?")) return;
+    
     try {
-      await fetch(`http://localhost:8000/api/applications/${id}`, { method: "DELETE" });
-      setApplications(applications.filter((app) => app.id !== id));
+      const res = await fetch(`${API_URL}/applications/${id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+      if (res.ok) {
+        setApplications(applications.filter((app) => app.id !== id));
+        setStats(prev => ({ ...prev, total: prev.total - 1 }));
+      }
     } catch (err) {
       console.error("Failed to delete:", err);
     }
@@ -165,28 +169,28 @@ export default function Dashboard() {
     }
   };
 
-  const stats = [
+  const statCards = [
     {
       label: "Total Applications",
-      value: applications.length.toString(),
+      value: stats.total.toString(),
       icon: FileText,
       color: "bg-primary-container text-white",
     },
     {
       label: "Approved",
-      value: applications.filter((a) => a.status?.toLowerCase() === "approved").length.toString(),
+      value: stats.approved.toString(),
       icon: CheckCircle,
       color: "bg-emerald-500 text-white",
     },
     {
-      label: "Under Review",
-      value: applications.filter((a) => ["under review", "processing"].includes(a.status?.toLowerCase())).length.toString(),
-      icon: Clock,
-      color: "bg-amber-500 text-white",
+      label: "Approval Rate",
+      value: `${stats.approvalRate}%`,
+      icon: TrendingUp,
+      color: "bg-blue-500 text-white",
     },
     {
-      label: "Flagged",
-      value: applications.filter((a) => a.status?.toLowerCase() === "flagged").length.toString(),
+      label: "High Risk",
+      value: stats.highRisk.toString(),
       icon: AlertTriangle,
       color: "bg-red-500 text-white",
     },
@@ -200,7 +204,7 @@ export default function Dashboard() {
           <div>
             <h1 className="text-2xl font-bold text-on-surface font-headline">Dashboard</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Monitor credit risk assessments and application status
+              Welcome back, {user?.name || "Analyst"}. Monitor your credit risk assessments.
             </p>
           </div>
           <button
@@ -214,7 +218,7 @@ export default function Dashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {stats.map((stat, idx) => (
+          {statCards.map((stat, idx) => (
             <div
               key={idx}
               className="bg-surface-container-lowest rounded-xl p-5 shadow-sm border border-outline-variant/20 hover:shadow-md transition-shadow"
@@ -241,7 +245,7 @@ export default function Dashboard() {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={riskDistribution}
+                    data={stats.riskDist}
                     cx="50%"
                     cy="50%"
                     innerRadius={50}
@@ -249,7 +253,7 @@ export default function Dashboard() {
                     paddingAngle={3}
                     dataKey="value"
                   >
-                    {riskDistribution.map((entry, index) => (
+                    {stats.riskDist.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -258,7 +262,7 @@ export default function Dashboard() {
               </ResponsiveContainer>
             </div>
             <div className="flex justify-center gap-4 mt-4">
-              {riskDistribution.map((item, idx) => (
+              {stats.riskDist.map((item, idx) => (
                 <div key={idx} className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
                   <span className="text-xs text-muted-foreground">{item.name}</span>
@@ -340,8 +344,14 @@ export default function Dashboard() {
 
         {/* Applications Table */}
         <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden">
-          <div className="p-5 border-b border-outline-variant/20">
+          <div className="p-5 border-b border-outline-variant/20 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-on-surface font-headline">Recent Applications</h3>
+            {isLoading && (
+              <span className="text-sm text-muted-foreground flex items-center gap-2">
+                <Sparkles className="w-4 h-4 animate-pulse" />
+                Loading...
+              </span>
+            )}
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -365,52 +375,60 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/20">
-                {applications.map((app) => (
-                  <tr key={app.id} className="hover:bg-surface-container-low transition-colors">
-                    <td className="px-5 py-4">
-                      <div>
-                        <p className="font-medium text-on-surface">{app.company}</p>
-                        <p className="text-xs text-muted-foreground">{app.id}</p>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-on-surface font-medium">{app.loanAmount}</td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg font-bold text-on-surface">{app.riskScore}</span>
-                        <span
-                          className={`px-2 py-0.5 text-xs font-medium rounded-full ${getRiskColor(app.riskLevel)}`}
-                        >
-                          {app.riskLevel}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4">
-                      <span
-                        className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(app.status)}`}
-                      >
-                        {app.status}
-                      </span>
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => navigate(`/credit-analysis/${app.id}`)}
-                          className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                          title="View Details"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(app.id)}
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+                {applications.length === 0 && !isLoading ? (
+                  <tr>
+                    <td colSpan={5} className="px-5 py-8 text-center text-muted-foreground">
+                      No applications found. Create a new application to get started.
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  applications.map((app) => (
+                    <tr key={app.id} className="hover:bg-surface-container-low transition-colors">
+                      <td className="px-5 py-4">
+                        <div>
+                          <p className="font-medium text-on-surface">{app.company}</p>
+                          <p className="text-xs text-muted-foreground">{app.id}</p>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4 text-on-surface font-medium">{app.loanAmount}</td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg font-bold text-on-surface">{app.riskScore || "-"}</span>
+                          <span
+                            className={`px-2 py-0.5 text-xs font-medium rounded-full ${getRiskColor(app.riskLevel)}`}
+                          >
+                            {app.riskLevel || "pending"}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span
+                          className={`px-3 py-1 text-xs font-medium rounded-full border ${getStatusColor(app.status)}`}
+                        >
+                          {app.status}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => navigate(`/credit-analysis/${app.id}`)}
+                            className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(app.id)}
+                            className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
