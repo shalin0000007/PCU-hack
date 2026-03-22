@@ -234,6 +234,7 @@ def parse_financial_files(gst_bytes: bytes, bank_bytes: bytes, industry: str = "
         "Mining": {"profit_margin": 16, "debt_ratio": 50, "liquidity": 1.7},
         "Healthcare": {"profit_margin": 13, "debt_ratio": 48, "liquidity": 1.9},
         "Finance": {"profit_margin": 20, "debt_ratio": 65, "liquidity": 1.8},
+        "Education": {"profit_margin": 11, "debt_ratio": 45, "liquidity": 1.5},
     }
     benchmarks = industry_benchmarks.get(industry, {"profit_margin": 15, "debt_ratio": 52, "liquidity": 1.8})
     

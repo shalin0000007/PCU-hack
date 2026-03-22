@@ -192,6 +192,7 @@ export default function NewApplication() {
                   <option value="Real Estate">Real Estate</option>
                   <option value="Mining">Mining / Energy</option>
                   <option value="Logistics">Logistics</option>
+                  <option value="Education">Education</option>
                 </select>
               </div>
 
