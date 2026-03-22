@@ -76,6 +76,7 @@ const newsDataFallback = [
     sentiment: "positive",
     date: "2 days ago",
     summary: "TechVista wins ₹15 crore government project for digital transformation",
+    url: "#"
   },
   {
     id: 2,
@@ -84,6 +85,7 @@ const newsDataFallback = [
     sentiment: "neutral",
     date: "1 week ago",
     summary: "IT sector sees 12% YoY growth, down from 18% previous quarter",
+    url: "#"
   },
   {
     id: 3,
@@ -92,6 +94,7 @@ const newsDataFallback = [
     sentiment: "negative",
     date: "2 weeks ago",
     summary: "Several mid-size IT firms under scrutiny for GST filing irregularities",
+    url: "#"
   },
 ];
 
@@ -526,22 +529,31 @@ export default function CreditRiskAnalysis() {
              
              <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
                {newsList.map((news: any) => (
-                 <div key={news.id} className="p-4 bg-white/50 dark:bg-black/20 border border-[#e5e5e5] dark:border-white/[0.06] rounded-xl group transition-all hover:bg-white dark:hover:bg-white/5">
+                 <a 
+                    key={news.url || news.id || Math.random()} 
+                    href={news.url || "#"} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="block p-4 bg-white/50 dark:bg-black/20 border border-[#e5e5e5] dark:border-white/[0.06] rounded-xl group transition-all hover:bg-white dark:hover:bg-white/5 cursor-pointer hover:shadow-md"
+                 >
                     <div className="flex items-start justify-between mb-2 gap-4">
-                      <h4 className="text-sm font-bold text-[#1a1a1a] dark:text-[#dae2fd] group-hover:text-[#00b386] dark:group-hover:text-[#50ddad] transition-colors leading-tight">{news.title}</h4>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase flex-shrink-0 ${getSentimentColor(news.sentiment)}`}>
-                        {news.sentiment}
+                      <h4 className="text-sm font-bold text-[#1a1a1a] dark:text-[#dae2fd] group-hover:text-[#00b386] dark:group-hover:text-[#50ddad] transition-colors leading-tight flex items-center gap-2">
+                        {news.title}
+                        <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                      </h4>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase flex-shrink-0 ${getSentimentColor(news.sentiment || "neutral")}`}>
+                        {news.sentiment || "Update"}
                       </span>
                     </div>
-                    <p className="text-xs text-[#737373] dark:text-[#86948c] mb-3 line-clamp-2 leading-relaxed">{news.summary}</p>
+                    <p className="text-xs text-[#737373] dark:text-[#86948c] mb-3 line-clamp-2 leading-relaxed">{news.summary || "Click to read more details regarding this development."}</p>
                     <div className="flex items-center justify-between">
                        <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest text-[#737373] dark:text-[#3c4a43]">
-                         <span>{news.source}</span>
-                         <span>•</span>
-                         <span>{news.date}</span>
+                         <span>{news.source || "Market News"}</span>
+                         {news.date && <span>•</span>}
+                         {news.date && <span>{news.date}</span>}
                        </div>
                     </div>
-                 </div>
+                 </a>
                ))}
                {newsList.length === 0 && (
                  <p className="text-center text-sm text-[#737373] dark:text-[#86948c] py-8">No recent market news found.</p>
