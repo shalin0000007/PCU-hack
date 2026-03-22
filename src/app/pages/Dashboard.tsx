@@ -408,17 +408,38 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Applications Table */}
+          {/* Applications Table */}
         <div className="bg-white dark:bg-white/[0.04] backdrop-blur-2xl rounded-2xl shadow-lg border border-[#e5e5e5] dark:border-white/[0.06] overflow-hidden">
-          <div className="p-6 border-b border-[#e5e5e5] dark:border-white/[0.06] flex items-center justify-between bg-white/50 dark:bg-transparent">
+          <div className="p-6 border-b border-[#e5e5e5] dark:border-white/[0.06] flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/50 dark:bg-transparent">
             <div>
               <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#1a1a1a] to-[#737373] dark:from-[#dae2fd] dark:to-[#86948c]">Recent Applications</h2>
               <p className="text-sm text-[#737373] dark:text-[#86948c] mt-1">Track and manage credit risk assessments</p>
             </div>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <select 
+                value={filterRisk}
+                onChange={(e) => setFilterRisk(e.target.value)}
+                className="px-4 py-2 bg-[#f5f5f5] dark:bg-[#060e20] border border-[#e5e5e5] dark:border-[#1e293b] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#50ddad]/30 transition-all text-[#1a1a1a] dark:text-[#dae2fd]"
+              >
+                <option value="all">All Risks</option>
+                <option value="high">High Risk</option>
+                <option value="medium">Medium Risk</option>
+                <option value="low">Low Risk</option>
+              </select>
+              <select 
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-4 py-2 bg-[#f5f5f5] dark:bg-[#060e20] border border-[#e5e5e5] dark:border-[#1e293b] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#50ddad]/30 transition-all text-[#1a1a1a] dark:text-[#dae2fd]"
+              >
+                <option value="date">Sort by Date</option>
+                <option value="risk">Sort by Risk</option>
+                <option value="amount">Sort by Amount</option>
+                <option value="company">Sort by Name</option>
+              </select>
               <button 
                 onClick={() => navigate("/history")}
-                className="w-8 h-8 flex items-center justify-center border border-[#e5e5e5] dark:border-white/10 rounded-lg hover:bg-[#f5f5f5] dark:hover:bg-white/5 transition-colors text-[#737373] dark:text-[#86948c]"
+                className="w-10 h-10 flex items-center justify-center border border-[#e5e5e5] dark:border-white/10 rounded-xl hover:bg-[#f5f5f5] dark:hover:bg-white/5 transition-colors text-[#737373] dark:text-[#86948c]"
+                title="View Full History"
               >
                 <ArrowUpDown className="w-4 h-4" />
               </button>

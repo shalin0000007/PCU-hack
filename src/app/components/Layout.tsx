@@ -92,7 +92,7 @@ export default function Layout({ children }: LayoutProps) {
     <div className={`min-h-screen ${isDarkMode ? "dark" : ""}`}>
       <div className="min-h-screen bg-[#fafafa] dark:bg-[#0b1326] transition-colors duration-300">
         {/* Sidebar — Sovereign Intelligence */}
-        <aside className="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-[#131b2e] border-r border-[#e5e5e5] dark:border-[#1e293b]/50 transition-colors duration-300 z-30">
+        <aside className="fixed left-0 top-0 h-screen w-64 bg-white dark:bg-[#131b2e] border-r border-[#e5e5e5] dark:border-[#1e293b]/50 transition-colors duration-300 z-30 print:hidden">
           <div className="p-6">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-br from-[#50ddad] to-[#00b386] rounded-xl flex items-center justify-center shadow-lg shadow-[#00b386]/25">
@@ -146,9 +146,9 @@ export default function Layout({ children }: LayoutProps) {
         </aside>
 
         {/* Main Content */}
-        <div className="ml-64">
+        <div className="ml-64 print:ml-0">
           {/* Top Bar — Glassmorphism */}
-          <header className="sticky top-0 h-16 bg-white/80 dark:bg-[#131b2e]/80 backdrop-blur-xl border-b border-[#e5e5e5] dark:border-[#1e293b]/30 z-20 transition-colors duration-300">
+          <header className="sticky top-0 h-16 bg-white/80 dark:bg-[#131b2e]/80 backdrop-blur-xl border-b border-[#e5e5e5] dark:border-[#1e293b]/30 z-20 transition-colors duration-300 print:hidden">
             <div className="h-full px-6 flex items-center justify-between">
               {/* Search */}
               <div className="flex-1 max-w-xl">

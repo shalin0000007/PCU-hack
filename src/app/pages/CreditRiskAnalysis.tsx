@@ -287,7 +287,7 @@ export default function CreditRiskAnalysis() {
               <p className="text-sm font-medium text-[#737373] dark:text-[#86948c] uppercase tracking-wider">{id} • Credit Risk Analysis Report</p>
             </div>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3 print:hidden">
             <button
               onClick={() => navigate(`/report/${id}`)}
               className="px-5 py-2.5 bg-transparent border border-[#00b386] dark:border-[#50ddad]/30 text-[#00b386] dark:text-[#50ddad] font-bold rounded-xl hover:bg-[#00b386]/10 transition-all flex items-center gap-2 text-sm backdrop-blur-md"
@@ -297,7 +297,7 @@ export default function CreditRiskAnalysis() {
             </button>
             <button 
               onClick={() => {
-                window.open(`http://localhost:8000/api/report/${id}/pdf`, '_blank');
+                window.print();
               }}
               className="px-6 py-2.5 bg-gradient-to-r from-[#50ddad] to-[#00b386] text-[#003828] font-bold rounded-xl shadow-[0_4px_14px_rgba(0,179,134,0.3)] hover:shadow-[0_6px_20px_rgba(0,179,134,0.4)] transition-all flex items-center gap-2 text-sm"
             >
@@ -527,36 +527,49 @@ export default function CreditRiskAnalysis() {
                <h3 className="text-lg font-bold text-[#1a1a1a] dark:text-[#dae2fd]">Real-Time Market Intelligence</h3>
              </div>
              
-             <div className="space-y-4 flex-1 overflow-y-auto pr-2 custom-scrollbar">
-               {newsList.map((news: any) => (
-                 <a 
-                    key={news.url || news.id || Math.random()} 
-                    href={news.url || "#"} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="block p-4 bg-white/50 dark:bg-black/20 border border-[#e5e5e5] dark:border-white/[0.06] rounded-xl group transition-all hover:bg-white dark:hover:bg-white/5 cursor-pointer hover:shadow-md"
-                 >
-                    <div className="flex items-start justify-between mb-2 gap-4">
-                      <h4 className="text-sm font-bold text-[#1a1a1a] dark:text-[#dae2fd] group-hover:text-[#00b386] dark:group-hover:text-[#50ddad] transition-colors leading-tight flex items-center gap-2">
-                        {news.title}
-                        <ExternalLink className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                      </h4>
-                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold tracking-widest uppercase flex-shrink-0 ${getSentimentColor(news.sentiment || "neutral")}`}>
-                        {news.sentiment || "Update"}
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#737373] dark:text-[#86948c] mb-3 line-clamp-2 leading-relaxed">{news.summary || "Click to read more details regarding this development."}</p>
-                    <div className="flex items-center justify-between">
-                       <div className="flex items-center gap-2 text-[10px] uppercase font-bold tracking-widest text-[#737373] dark:text-[#3c4a43]">
-                         <span>{news.source || "Market News"}</span>
-                         {news.date && <span>•</span>}
-                         {news.date && <span>{news.date}</span>}
-                       </div>
-                    </div>
-                 </a>
-               ))}
+             <div className="relative pl-6 space-y-6 flex-1 overflow-y-auto pr-2 custom-scrollbar my-2">
+               {/* Vertical Timeline Track */}
+               <div className="absolute left-[11px] top-2 bottom-2 w-px bg-gradient-to-b from-[#e5e5e5] via-[#e5e5e5] to-transparent dark:from-[#3c4a43]/50 dark:via-[#3c4a43]/50 dark:to-transparent"></div>
+
+               {newsList.map((news: any, idx: number) => {
+                 const sentiment = (news.sentiment || "").toLowerCase();
+                 const sentimentColor = sentiment === "positive"
+                    ? "text-[#10b981] bg-[#d1fae5] dark:text-[#50ddad] dark:bg-[#00b386]/20 border border-[#10b981]/20 dark:border-[#00b386]/30"
+                    : sentiment === "negative" 
+                    ? "text-[#ef4444] bg-[#fee2e2] dark:text-[#f87171] dark:bg-[#ef4444]/20 border border-[#ef4444]/20 dark:border-[#ef4444]/30"
+                    : "text-[#f59e0b] bg-[#fef3c7] dark:text-[#fbbf24] dark:bg-[#f59e0b]/20 border border-[#f59e0b]/20 dark:border-[#f59e0b]/30";
+
+                 return (
+                   <div key={news.url || idx} className="relative group">
+                     {/* Timeline Dot */}
+                     <div className="absolute -left-[30px] top-1.5 w-[11px] h-[11px] rounded-full bg-white dark:bg-[#0b1326] border-2 border-[#e5e5e5] dark:border-[#3c4a43] group-hover:border-[#00b386] dark:group-hover:border-[#50ddad] group-hover:shadow-[0_0_8px_rgba(0,179,134,0.5)] transition-all z-10 duration-300"></div>
+                     
+                     <a 
+                        href={news.url || "#"} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="block bg-transparent transition-all group-hover:-translate-y-0.5 cursor-pointer"
+                     >
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <span className="text-[10px] font-mono font-bold text-[#737373] dark:text-[#86948c] uppercase tracking-widest">{news.date || "Just Now"}</span>
+                          <span className="w-1 h-1 rounded-full bg-[#d4d4d4] dark:bg-[#3c4a43]"></span>
+                          <span className="text-[10px] font-mono font-bold text-[#00b386] dark:text-[#50ddad] uppercase tracking-widest truncate max-w-[120px]">{news.source || "Terminal"}</span>
+                          <span className={`ml-auto px-1.5 py-0.5 rounded text-[9px] font-bold tracking-widest uppercase ${sentimentColor}`}>
+                            {news.sentiment || "NEUTRAL"}
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-bold text-[#1a1a1a] dark:text-[#dae2fd] group-hover:text-[#00b386] dark:group-hover:text-[#50ddad] transition-colors leading-snug mb-1.5 flex items-start gap-2">
+                          {news.title}
+                        </h4>
+                        <p className="text-xs text-[#737373] dark:text-[#86948c] line-clamp-2 leading-relaxed opacity-90">{news.summary}</p>
+                     </a>
+                   </div>
+                 );
+               })}
                {newsList.length === 0 && (
-                 <p className="text-center text-sm text-[#737373] dark:text-[#86948c] py-8">No recent market news found.</p>
+                 <div className="pl-4 border-l border-dashed border-[#e5e5e5] dark:border-[#3c4a43]">
+                   <p className="text-sm font-mono text-[#737373] dark:text-[#86948c] py-4 uppercase tracking-widest">Awaiting terminal feed...</p>
+                 </div>
                )}
              </div>
           </div>
