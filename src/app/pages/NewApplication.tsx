@@ -208,6 +208,7 @@ export default function NewApplication() {
                   <option value="Equipment">Equipment Purchase</option>
                   <option value="Debt Consolidation">Debt Consolidation</option>
                   <option value="Project Finance">Project Finance</option>
+                  <option value="Education">Education</option>
                 </select>
               </div>
             </div>
