@@ -88,8 +88,8 @@ def fetch_company_news(company_name: str) -> list:
     Falls back to mock data if an error occurs or no results are found.
     """
     try:
-        # Enforce financial relevance using Google News boolean operators
-        search_term = f'"{company_name}" AND (money OR stock OR investment OR improvement OR fraud OR revenue OR finance OR penalty OR market OR economy)'
+        # Fallback to a looser fuzzy match that grabs real live articles based on keywords globally
+        search_term = f'"{company_name}" AND (finance OR economy OR business)'
         query = urllib.parse.quote(search_term)
         url = f"https://news.google.com/rss/search?q={query}&hl=en-US&gl=US&ceid=US:en"
         
@@ -100,8 +100,25 @@ def fetch_company_news(company_name: str) -> list:
         root = ET.fromstring(xml_data)
         items = root.findall('.//item')
         
+        # If absolutely no exact matches exist for this imaginary company, loosen the query entirely to ensure REAL news applies
         if not items:
-            return _get_dummy_news(company_name, no_results=True)
+            company_base = company_name.replace("Pvt", "").replace("Ltd", "").replace("INC", "").strip().split()[0]
+            loose_search = f"{company_base} (finance OR business OR industry OR market)"
+            loose_query = urllib.parse.quote(loose_search)
+            loose_url = f"https://news.google.com/rss/search?q={loose_query}&hl=en-US&gl=US&ceid=US:en"
+            
+            loose_req = urllib.request.Request(loose_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(loose_req) as loose_resp:
+                loose_xml = loose_resp.read()
+            
+            items = ET.fromstring(loose_xml).findall('.//item')
+            
+        if not items:
+            # Absolute global fallback to real-time top finance news
+            global_url = f"https://news.google.com/rss/search?q=Global+Business+Finance&hl=en-US&gl=US&ceid=US:en"
+            global_req = urllib.request.Request(global_url, headers={'User-Agent': 'Mozilla/5.0'})
+            with urllib.request.urlopen(global_req) as glob_resp:
+                items = ET.fromstring(glob_resp.read()).findall('.//item')
         
         # Collect titles for batch AI sentiment
         raw_titles = []
