@@ -129,7 +129,13 @@ def generate_ai_risk_assessment(company_name: str, chart_data: dict, news_data: 
         if content.startswith("```json"): content = content[7:]
         if content.startswith("```"): content = content[3:]
         if content.endswith("```"): content = content[:-3]
-        return json.loads(content.strip())
+        parsed = json.loads(content.strip())
+        
+        # Enforce name correctness over model hallucination
+        if "summary" in parsed and isinstance(parsed["summary"], str):
+            parsed["summary"] = parsed["summary"].replace("TechFiesta", company_name).replace("Techfiesta", company_name).replace("techfiesta", company_name)
+            
+        return parsed
     except Exception as e:
         print(f"AI Assessment Error: {e}")
         return _fallback_assessment()
@@ -169,7 +175,7 @@ Write exactly 3 sentences:
 2. The most critical financial concern or strength
 3. Clear recommendation (approve/conditional approve/reject with reason)
 
-Be direct, professional, and specific. Do NOT use markdown or bullet points. Output ONLY the 3 sentences as a single paragraph."""
+CRITICAL RULE: You MUST use the exact company name '{company_name}' in your response. NEVER use placeholder names like "TechFiesta" or anything else. Be direct, professional, and specific. Do NOT use markdown or bullet points. Output ONLY the 3 sentences as a single paragraph."""
 
     try:
         completion = client.chat.completions.create(
@@ -178,6 +184,8 @@ Be direct, professional, and specific. Do NOT use markdown or bullet points. Out
         )
         summary = completion.choices[0].message.content.strip()
         if summary:
+            # Force-strip hallucinated dummy names just in case the proxy/model disobeys
+            summary = summary.replace("TechFiesta", company_name).replace("Techfiesta", company_name).replace("techfiesta", company_name)
             return summary
         return _fallback_summary(company_name, risk_score, risk_level, flags, loan_amount)
     except Exception as e:
