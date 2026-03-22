@@ -134,15 +134,15 @@ export default function AIChatbot() {
             </div>
           )}
 
-          <div className="p-4 border-t border-[#e5e5e5]">
+          <div className="p-4 border-t border-[#e5e5e5] dark:border-white/[0.06] bg-white dark:bg-[#0b1326] rounded-b-[20px]">
             <div className="flex gap-2">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === "Enter" && handleSendMessage()}
+                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                 placeholder="Ask me anything..."
-                className="flex-1 px-4 py-2 bg-[#f5f5f5] border border-[#e5e5e5] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent"
+                className="flex-1 px-4 py-2 bg-[#f5f5f5] dark:bg-[#060e20] border border-[#e5e5e5] dark:border-[#1e293b] text-[#1a1a1a] dark:text-[#dae2fd] placeholder:text-[#737373] dark:placeholder:text-[#3c4a43] rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00b386] focus:border-transparent transition-colors"
               />
               <button
                 onClick={handleSendMessage}
