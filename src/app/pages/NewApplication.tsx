@@ -66,6 +66,8 @@ export default function NewApplication() {
       return;
     }
 
+    setIsSubmitting(true);
+
     const data = new FormData();
     data.append("company_name", formData.companyName);
     data.append("industry", formData.industry);
@@ -97,6 +99,8 @@ export default function NewApplication() {
     } catch (err) {
       console.error("Analysis Error:", err);
       alert("Failed to connect to the backend server. Please make sure the FastAPI server is running.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -300,10 +304,15 @@ export default function NewApplication() {
             </button>
             <button
               onClick={handleStartAnalysis}
-              className="px-8 py-3.5 bg-gradient-to-r from-[#50ddad] to-[#00b386] text-[#003828] font-bold rounded-xl shadow-[0_4px_14px_rgba(0,179,134,0.3)] hover:shadow-[0_6px_20px_rgba(0,179,134,0.4)] transition-all flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+              className={`px-8 py-3.5 font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+                isSubmitting
+                  ? "bg-red-500 text-white cursor-not-allowed animate-pulse shadow-lg"
+                  : "bg-gradient-to-r from-[#50ddad] to-[#00b386] text-[#003828] shadow-[0_4px_14px_rgba(0,179,134,0.3)] hover:shadow-[0_6px_20px_rgba(0,179,134,0.4)]"
+              }`}
             >
-              <Database className="w-4 h-4" />
-              <span>Submit for Analysis</span>
+              <Database className={`w-4 h-4 ${isSubmitting ? "animate-spin" : ""}`} />
+              <span>{isSubmitting ? "Processing Data..." : "Submit for Analysis"}</span>
             </button>
           </div>
         </div>
