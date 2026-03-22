@@ -49,14 +49,14 @@ export default function Dashboard() {
   const [riskDistribution, setRiskDistribution] = useState(defaultRiskDist);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/applications")
+    fetch(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/applications`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setAppData(data);
       })
       .catch(err => console.error("Failed to fetch applications:", err));
 
-    fetch("http://localhost:8000/api/dashboard-stats")
+    fetch(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/dashboard-stats`)
       .then(res => res.json())
       .then(data => {
         setStats({ total: data.total || 0, highRisk: data.highRisk || 0, approved: data.approved || 0, approvalRate: data.approvalRate || 0 });

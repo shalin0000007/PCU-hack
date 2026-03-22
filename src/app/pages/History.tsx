@@ -13,7 +13,7 @@ export default function History() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("http://localhost:8000/api/applications")
+    fetch(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/applications`)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) setHistoryData(data);
@@ -34,7 +34,7 @@ export default function History() {
   const handleDelete = async (id: string) => {
     if (!confirm("Are you sure you want to delete this application?")) return;
     try {
-      const res = await fetch(`http://localhost:8000/api/applications/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/applications/${id}`, {
         method: "DELETE"
       });
       if (res.ok) {

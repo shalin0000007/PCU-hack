@@ -20,11 +20,11 @@ export default function ReportPreview() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`http://localhost:8000/api/analysis/${id}`).then(res => {
+      fetch(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/analysis/${id}`).then(res => {
         if (!res.ok) throw new Error("Failed to fetch analysis");
         return res.json();
       }),
-      fetch(`http://localhost:8000/api/ai-assessment/${id}`).then(res => {
+      fetch(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/ai-assessment/${id}`).then(res => {
         if (!res.ok) throw new Error("Failed to fetch ai");
         return res.json();
       })
@@ -101,7 +101,7 @@ export default function ReportPreview() {
     setInputMessage("");
 
     try {
-      const response = await fetch(`http://localhost:8000/api/chat/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/chat/${id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -152,7 +152,7 @@ export default function ReportPreview() {
             </button>
             <button 
               onClick={() => {
-                window.open(`http://localhost:8000/api/report/${id}/pdf`, '_blank');
+                window.open(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/report/${id}/pdf`, '_blank');
               }}
               className="px-6 py-3 bg-gradient-to-r from-[#00b386] to-[#059669] text-white rounded-xl hover:shadow-lg transition-all flex items-center gap-2">
               <Download className="w-5 h-5" />

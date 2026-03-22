@@ -106,7 +106,7 @@ export default function CreditRiskAnalysis() {
 
   useEffect(() => {
     if (reportData?.application?.companies?.name && reportData.application.companies.name !== "Unknown Company") {
-      fetch(`http://localhost:8000/api/news?company=${encodeURIComponent(reportData.application.companies.name)}`)
+      fetch(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/news?company=${encodeURIComponent(reportData.application.companies.name)}`)
         .then(res => res.json())
         .then(data => {
             if (data.news) setLiveNews(data.news);
@@ -117,11 +117,11 @@ export default function CreditRiskAnalysis() {
 
   useEffect(() => {
     Promise.all([
-      fetch(`http://localhost:8000/api/analysis/${id}`).then(res => {
+      fetch(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/analysis/${id}`).then(res => {
         if (!res.ok) throw new Error("Failed to fetch analysis");
         return res.json();
       }),
-      fetch(`http://localhost:8000/api/ai-assessment/${id}`).then(res => {
+      fetch(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/ai-assessment/${id}`).then(res => {
         if (!res.ok) throw new Error("Failed to fetch ai");
         return res.json();
       })
@@ -294,7 +294,7 @@ export default function CreditRiskAnalysis() {
             </button>
             <button 
               onClick={() => {
-                window.open(`http://localhost:8000/api/report/${id}/pdf`, '_blank');
+                window.open(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/report/${id}/pdf`, '_blank');
               }}
               className="px-6 py-2.5 bg-gradient-to-r from-[#50ddad] to-[#00b386] text-[#003828] font-bold rounded-xl shadow-[0_4px_14px_rgba(0,179,134,0.3)] hover:shadow-[0_6px_20px_rgba(0,179,134,0.4)] transition-all flex items-center gap-2 text-sm"
             >

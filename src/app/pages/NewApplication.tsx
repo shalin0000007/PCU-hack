@@ -29,7 +29,7 @@ export default function NewApplication() {
     }
     setFetchStatus("Fetching news and market data...");
     try {
-      const res = await fetch(`http://localhost:8000/api/news?company=${encodeURIComponent(company)}`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/news?company=${encodeURIComponent(company)}`);
       const data = await res.json();
       if (data.news && data.news.length > 0) {
         setFetchStatus(`✅ Found ${data.news.length} news articles for ${company}`);
@@ -69,7 +69,7 @@ export default function NewApplication() {
     if (formData.bankFile) data.append("bank_file", formData.bankFile);
 
     try {
-      const response = await fetch("http://localhost:8000/api/analyze", {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://credintel-backend.onrender.com'}/api/analyze`, {
         method: "POST",
         body: data,
       });
